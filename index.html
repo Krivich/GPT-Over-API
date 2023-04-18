@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>GPT-Over-API</title>
+</head>
+<body>
+<h1>GPT-Over-API</h1>
+<label for="token">
+    API token (<a href="https://platform.openai.com/account/api-keys" target="_blank">request</a>):
+</label>
+<input type="password" id="token" name="token" placeholder="Enter API token here" autocomplete="on">
+<br><br>
+
+<div id="dialogue"></div>
+<br>
+<textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
+<button onclick="sendRequest()">Send</button>
+
+<script>
+    const dialogue = document.getElementById("dialogue");
+    let history = "";
+
+    async function sendRequest() {
+        const apiToken = document.getElementById("token").value.trim();
+        if (!apiToken) {
+            alert("Введите API токен");
+            return;
+        }
+
+        let promptField = document.getElementById("input");
+        const prompt = promptField.value.trim();
+        if (!prompt) {
+            alert("Введите текст");
+            return;
+        }
+
+        const button = document.querySelector("button");
+        button.disabled = true;
+
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiToken}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [{role: "user", content: prompt}],
+                temperature: 0.7,
+                top_p: 1,
+                frequency_penalty: 0,
+                presence_penalty: 0,
+                max_tokens: 200,
+                stream: false,
+                n: 1,
+            }),
+        });
+
+        if (response.ok) {
+            const json = await response.json();
+            const message = json.choices[0].message.content;
+            history += `<strong>User: </strong>${prompt}<br><strong>AI: </strong>${message}<br>`;
+
+            dialogue.innerHTML = history;
+            promptField.value = "";
+        } else {
+            alert(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        button.disabled = false;
+    }
+</script>
+</body>
+</html>
