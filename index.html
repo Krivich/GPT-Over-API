@@ -1,42 +1,249 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <title>GPT-Over-API</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #fff;
+        }
+
+        .left {
+            display: flex;
+            flex-direction: column;
+            width: 250px;
+            background-color: rgb(32, 33, 35);
+            color: #fff;
+            padding: 20px;
+        }
+
+
+        #chat-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-list-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            padding: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-list-item:hover {
+            background-color: rgb(42, 42, 42);
+        }
+
+        .chat-list-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 10px;
+            flex: 1;
+        }
+
+        .chat-list-item-delete {
+            font-size: 20px;
+            color: #ccc;
+            cursor: pointer;
+            margin-left: auto;
+            border: none;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .new-chat-button {
+            margin-bottom: 20px;
+            background-color: rgb(66, 133, 244);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .token-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgb(32, 33, 35);
+            color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .token-label {
+            margin-bottom: 10px;
+        }
+
+        .token-input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .token-label a {
+            color: #fff;
+        }
+
+        .scroll-container {
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+
+        .right {
+            flex: 1;
+            padding: 20px 0 20px 0;
+        }
+
+        .message {
+            width: 100%;
+            border-bottom: 1px solid rgba(0, 0, 0, .1);
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 24px 0 24px 0;
+        }
+
+        .message:nth-child(even) {
+            background-color: rgb(247, 247, 248);
+        }
+
+        .message .message-content {
+            flex: 1;
+            max-width: 765px;
+            white-space: pre-wrap;
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .message .message-content p {
+            margin: 0;
+        }
+
+        .prompt {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            max-width: 765px;
+            margin-right: auto;
+            margin-left: auto;
+            padding-top: 24px;
+        }
+
+        .prompt #input {
+            flex: 1;
+        }
+
+        .prompt button {
+            margin-left: 24px;
+            background-color: rgb(66, 133, 244);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+
+        .button:active {
+            opacity: 0.6;
+        }
+
+        .button[disabled] {
+            background-color: rgb(200, 200, 200);
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-<h1>GPT-Over-API</h1>
-<label for="token">
-    API token (<a href="https://platform.openai.com/account/api-keys" target="_blank">request</a>):
-</label>
-<input type="password" id="token" name="token" placeholder="Enter API token here" autocomplete="on">
-<br><br>
-
-<div id="dialogue"></div>
-<br>
-<textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
-<button onclick="sendRequest()">Send</button>
-
+<div class="left">
+    <button class="new-chat-button button" onclick="newChat()">+ New chat</button>
+    <ul id="chat-list" class="scroll-container"></ul>
+    <div class="token-panel">
+        <label for="token" class="token-label">
+            API token (<a href="https://platform.openai.com/account/api-keys" target="_blank">request</a>):
+        </label>
+        <input type="password" id="token" name="token" placeholder="Enter API token here" autocomplete="on"
+               class="token-input">
+    </div>
+</div>
+<div class="right">
+    <div id="dialogue" class="scroll-container"></div>
+    <div class="prompt">
+        <textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
+        <button onclick="sendRequest()" class="button" id="send-request-button">➤</button>
+    </div>
+</div>
 <script>
+
+    const CONTEXT_LENGTH = 20;
+
     const dialogue = document.getElementById("dialogue");
-    let history = "";
+    const apiTokenInput = document.getElementById("token");
+    const promptField = document.getElementById("input");
+    const button = document.getElementById("send-request-button");
+
+    const chatList = document.getElementById("chat-list");
+
+    let history = [];
+
+    button.disabled = false;
+    console.log(button);
 
     async function sendRequest() {
-        const apiToken = document.getElementById("token").value.trim();
+        const apiToken = apiTokenInput.value.trim();
         if (!apiToken) {
-            alert("Введите API токен");
+            alert("Enter API token");
             return;
         }
-
-        let promptField = document.getElementById("input");
         const prompt = promptField.value.trim();
         if (!prompt) {
-            alert("Введите текст");
+            alert("Enter text");
             return;
         }
 
-        const button = document.querySelector("button");
-        button.disabled = true;
+        if (button.disabled) {
+            alert("Request in progress");
+            return;
+        }
 
+        const lastMessages = history.slice(-CONTEXT_LENGTH);
+        const messages = [...lastMessages, {role: "user", content: prompt}];
+
+        button.disabled = true;
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -45,7 +252,7 @@
             },
             body: JSON.stringify({
                 model: "gpt-3.5-turbo",
-                messages: [{role: "user", content: prompt}],
+                messages,
                 temperature: 0.7,
                 top_p: 1,
                 frequency_penalty: 0,
@@ -59,16 +266,84 @@
         if (response.ok) {
             const json = await response.json();
             const message = json.choices[0].message.content;
-            history += `<strong>User: </strong>${prompt}<br><strong>AI: </strong>${message}<br>`;
+            history.push({role: "user", content: prompt}, {role: "assistant", content: message});
 
-            dialogue.innerHTML = history;
+            renderHistory();
             promptField.value = "";
+
+            saveHistory(history);
+
+            button.disabled = false;
+
         } else {
+
+            button.disabled = false;
             alert(`Error: ${response.status} ${response.statusText}`);
         }
-
-        button.disabled = false;
     }
+
+    function renderHistory() {
+        dialogue.innerHTML = history.map(({role, content}) => `
+          <div class="message">
+            <span class="message-content">${content}</span>
+          </div>
+        `).join("");
+    }
+
+    const HISTORY_KEY = "chat-history";
+
+    function newChat() {
+        history = [];
+        renderHistory();
+    }
+
+    function loadChatList() {
+        chatList.innerHTML = "";
+        const savedHistory = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+
+        savedHistory.forEach((item, index) => {
+            const {name} = item;
+            const listItem = document.createElement("li");
+            listItem.classList.add("chat-list-item");
+            listItem.textContent = name;
+            const deleteButton = document.createElement("button");
+            deleteButton.classList.add("chat-list-item-delete");
+            deleteButton.classList.add("button");
+            deleteButton.textContent = "🗑️";
+            deleteButton.addEventListener("click", () => deleteHistory(index));
+            listItem.appendChild(deleteButton);
+            listItem.addEventListener("click", () => {
+                history = item.history;
+                renderHistory();
+            });
+            chatList.appendChild(listItem);
+        });
+    }
+
+    function deleteHistory(index) {
+        const savedHistory = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+        savedHistory.splice(index, 1);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(savedHistory));
+        loadChatList();
+    }
+
+    function saveHistory(history) {
+        const name = history[0].content.substring(0, 20);
+        const savedHistory = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+        const index = savedHistory.findIndex((item) => item.name === name);
+        if (index === -1) {
+            savedHistory.push({name, history});
+        } else {
+            savedHistory[index] = {name, history};
+        }
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(savedHistory));
+        loadChatList();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        loadChatList();
+    });
+
 </script>
 </body>
 </html>
