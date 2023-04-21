@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>GPT-Over-API</title>
     <style>
@@ -142,12 +142,22 @@
             flex: 1;
             max-width: 765px;
             white-space: pre-wrap;
-            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .message .message-content:nth-child(even) {
+            flex: 1;
+            max-width: 765px;
+            white-space: pre-wrap;
             margin-left: auto;
         }
 
         .message .message-content p {
             margin: 0;
+        }
+
+        .message .message-checkbox {
+            margin-right: auto;
         }
 
         .prompt {
@@ -186,6 +196,13 @@
             background-color: rgb(200, 200, 200);
             cursor: not-allowed;
         }
+
+        .properties {
+            max-width: 768px;
+            margin-right: auto;
+            margin-left: auto;
+            margin-top: 12px;
+        }
     </style>
 </head>
 <body>
@@ -206,10 +223,33 @@
         <textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
         <button onclick="sendRequest()" class="button" id="send-request-button">➤</button>
     </div>
+    <div class="properties">
+        <label for="model" title="Model of AI. Some models are not accessible for some users">Model:</label>
+        <select id="model">
+            <option value="gpt-4">gpt-4</option>
+            <option value="gpt-4-0314">gpt-4-0314</option>
+            <option value="gpt-4-32k">gpt-4-32k</option>
+            <option value="gpt-4-32k-0314">gpt-4-32k-0314</option>
+            <option value="gpt-3.5-turbo" selected>gpt-3.5-turbo</option>
+            <option value="gpt-3.5-turbo-0301">gpt-3.5-turbo-0301</option>
+        </select>
+        <label for="temperature"
+               title="Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic">Temperature:</label>
+        <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" value="1">
+        <label for="max-tokens"
+               title="The maximum number of tokens to generate in the chat completion. The total length of input tokens and generated tokens is limited by the model's context length">Max
+            Tokens:</label>
+        <input type="number" id="max-tokens" name="max-tokens" min="1" value="200">
+        <label for="context-strategy" title="How to select messages from the history to use them as prompt context">Context:</label>
+        <select id="context-strategy">
+            <option value="1">Last 1</option>
+            <option value="5">Last 5</option>
+            <option value="10" selected>Last 10</option>
+            <option value="100500">All</option>
+        </select>
+    </div>
 </div>
 <script>
-
-    const CONTEXT_LENGTH = 20;
 
     const dialogue = document.getElementById("dialogue");
     const apiTokenInput = document.getElementById("token");
@@ -218,10 +258,17 @@
 
     const chatList = document.getElementById("chat-list");
 
+
+    let selectedModel = "gpt-3.5-turbo";
+    let temperature = 1;
+    let maxTokens = 200;
+    let contextStrategy = 10;
+
+    // prompt to OpenAI API interaction logic
+
     let history = [];
 
     button.disabled = false;
-    console.log(button);
 
     async function sendRequest() {
         const apiToken = apiTokenInput.value.trim();
@@ -240,7 +287,7 @@
             return;
         }
 
-        const lastMessages = history.slice(-CONTEXT_LENGTH);
+        const lastMessages = generateContext();
         const messages = [...lastMessages, {role: "user", content: prompt}];
 
         button.disabled = true;
@@ -251,13 +298,13 @@
                 Authorization: `Bearer ${apiToken}`,
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo",
+                model: selectedModel,
                 messages,
-                temperature: 0.7,
+                temperature: temperature,
                 top_p: 1,
                 frequency_penalty: 0,
                 presence_penalty: 0,
-                max_tokens: 200,
+                max_tokens: maxTokens,
                 stream: false,
                 n: 1,
             }),
@@ -284,11 +331,37 @@
 
     function renderHistory() {
         dialogue.innerHTML = history.map(({role, content}) => `
-          <div class="message">
-            <span class="message-content">${content}</span>
-          </div>
+            <div class="message">
+                <span class="message-content">${content}</span>
+                <input type="checkbox" class="message-checkbox" title="Choose messages to use as context for your prompt">
+            </div>
         `).join("");
+
+        setCheckboxes();
     }
+
+    // Custom context by checkbox logic
+
+    function setCheckboxes() {
+        const checkboxList = document.querySelectorAll('.message-checkbox');
+        const start = Math.max(history.length - contextStrategy, 0); // начальный индекс для перебора
+        checkboxList.forEach((checkbox, index) => {
+            checkbox.checked = index >= start;
+        });
+    }
+
+    function generateContext() {
+        const contextMessages = [];
+        const checkboxList = document.querySelectorAll('.message-checkbox');
+        checkboxList.forEach((checkbox, index) => {
+            if (checkbox.checked) {
+                contextMessages.push(history[index]);
+            }
+        });
+        return contextMessages;
+    }
+
+    // Previous chat history save/load/delete/render/new logic
 
     const HISTORY_KEY = "chat-history";
 
@@ -339,6 +412,29 @@
         localStorage.setItem(HISTORY_KEY, JSON.stringify(savedHistory));
         loadChatList();
     }
+
+    // properties bar logic
+
+    const modelSelectbox = document.getElementById("model");
+    modelSelectbox.addEventListener("change", () => {
+        selectedModel = modelSelectbox.value;
+    });
+
+    const temperatureInput = document.getElementById("temperature");
+    temperatureInput.addEventListener("input", () => {
+        temperature = parseFloat(temperatureInput.value);
+    });
+
+    const maxTokensInput = document.getElementById("max-tokens");
+    maxTokensInput.addEventListener("input", () => {
+        maxTokens = parseInt(maxTokensInput.value);
+    });
+
+    const contextStrategySelectbox = document.getElementById("context-strategy");
+    contextStrategySelectbox.addEventListener("change", () => {
+        contextStrategy = parseInt(contextStrategySelectbox.value);
+        setCheckboxes();
+    });
 
     window.addEventListener("DOMContentLoaded", () => {
         loadChatList();
