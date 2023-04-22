@@ -299,6 +299,31 @@
             margin-bottom: 8px;
         }
 
+        .code {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+        }
+
+        .syntax-bracket {
+            color: blue;
+        }
+
+        .syntax-quote {
+            color: green;
+        }
+
+        .syntax-operator {
+            color: red;
+        }
+
+        .syntax-symbol {
+            color: purple;
+        }
+
 
     </style>
 </head>
@@ -458,16 +483,79 @@
     }
 
     function renderHistory() {
-        dialogue.innerHTML = history.map(({role, content}) => `
-            <div class="message">
-                <span class="message-content">${content}</span>
-                <input type="checkbox" class="message-checkbox" title="Choose messages to use as context for your prompt">
-            </div>
-        `).join("");
+        dialogue.innerHTML = history
+            .map(({role, content}) => {
+                let messageContent = "";
+                let isCodeBlock = false;
+
+                // Split content into sections based on code blocks
+                const contentSections = content.split(/```/);
+
+                // Loop through each section and render accordingly
+                for (let i = 0; i < contentSections.length; i++) {
+                    const section = contentSections[i];
+
+                    // If the section is a code block, wrap it in a <pre> tag and mark as a code block
+                    if (isCodeBlock) {
+                        messageContent += `<pre class="code">${highlightSyntax(section)}</pre>`;
+                        isCodeBlock = false;
+                    } else {
+                        messageContent += section;
+                        isCodeBlock = true;
+                    }
+                }
+
+                // Render the message HTML with a checkbox for each message
+                return `
+        <div class="message">
+          <span class="message-content">${messageContent}</span>
+          <input type="checkbox" class="message-checkbox" title="Choose messages to use as context for your prompt">
+        </div>
+      `;
+            })
+            .join("");
 
         setCheckboxes();
         welcomePanel();
     }
+
+    function highlightSyntax(text) {
+        // Regular expressions for syntax highlighting
+        const bracketsRegex = /[\[\]\{\}\(\)]/g;
+        const quotesRegex = /("|')(?:(?=(\\?))\2.)*?\1/g;
+        const operatorsRegex = /[+\-*/%=<>!&|^~?:;]/g;
+        const symbolsRegex = /[\.,@#$]/g;
+
+        return text.replace(
+            RegExp(
+                [
+                    bracketsRegex.source,
+                    quotesRegex.source,
+                    operatorsRegex.source,
+                    symbolsRegex.source,
+                ].join("|"),
+                "g"
+            ),
+            (match) => {
+                if (bracketsRegex.test(match)) {
+                    bracketsRegex.lastIndex = 0;
+                    return '<span class="syntax-bracket">' + match + "</span>";
+                } else if (quotesRegex.test(match)) {
+                    quotesRegex.lastIndex = 0;
+                    return '<span class="syntax-quote">' + match + "</span>";
+                } else if (operatorsRegex.test(match)) {
+                    operatorsRegex.lastIndex = 0;
+                    return '<span class="syntax-operator">' + match + "</span>";
+                } else if (symbolsRegex.test(match)) {
+                    symbolsRegex.lastIndex = 0;
+                    return '<span class="syntax-symbol">' + match + "</span>";
+                } else {
+                    return match;
+                }
+            }
+        );
+    }
+
 
     // Custom context by checkbox logic
 
