@@ -8,11 +8,17 @@ To get started with the GPT-Over-API chat client, simply download the `index.htm
 
 ## Demo
 
-Check out our live demo to see GPT-Over-API in action!
+Check out our live [Demo](https://krivich.github.io/GPT-Over-API/) to see GPT-Over-API in action!
 
-Note: For security reasons, you may want to use the downloaded version of the client rather than the live demo to avoid any potential leaks to GitHub.
 
-[Demo](https://krivich.github.io/GPT-Over-API/)
+
+## Main Features
+1. Easy to use alternative client for ChatGPT
+1. Uses a cost-effective API instead of buying a ChatGPT Plus subscription
+1. ChatGPT responses can be cut off mid-sentence. This client lets you set a token limit to prevent this issue
+1. ChatGPT responses can vary greatly between conversations. Here you to customize parameters like model selection and temperature for more consistent responses
+1. Long discussions can be hindered by incorrect responses and discarded hypotheses. Our client lets you specify context data for generating more accurate and relevant answers
+1. Serverless HTML & JS client, fully self-contained with no dependencies. Open-source and minimalistic, providing maximum freedom to add features and use in any browser
 
 ## Contributing
 
