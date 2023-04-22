@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>GPT-Over-API</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+          content="An alternative lightweight ChatGPT client that uses a cost-effective API and eliminates the risk of API token leak by running from an html file in your browser and having no third-party dependencies.">
+    <meta name="keywords" content="ChatGPT, OpenAI, GPT, API, lightweight client">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Krivich (https://github.com/Krivich)">
+    <title>GPT-Over-API ChatGPT Client</title>
     <style>
         body {
             margin: 0;
@@ -9,6 +16,22 @@
             display: flex;
             height: 100vh;
             background-color: #fff;
+        }
+
+        textarea,
+        select,
+        input {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 8px;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        textarea:focus,
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: #1E90FF;
         }
 
         .left {
@@ -174,22 +197,19 @@
             flex: 1;
         }
 
-        .prompt button {
-            margin-left: 24px;
+        #send-request-button {
             background-color: rgb(66, 133, 244);
+        }
+
+
+        .button {
+            margin-left: 24px;
             color: #fff;
+            background-color: gray;
             border: none;
             padding: 10px;
             border-radius: 5px;
             cursor: pointer;
-        }
-
-        .button:hover {
-            opacity: 0.8;
-        }
-
-        .button:active {
-            opacity: 0.6;
         }
 
         .button[disabled] {
@@ -197,17 +217,94 @@
             cursor: not-allowed;
         }
 
-        .properties {
+        .clickable:hover {
+            opacity: 0.8;
+            box-shadow: 0 0 3px 3px rgba(0, 128, 255, 0.2);
+        }
+
+        .clickable:active {
+            opacity: 0.6;
+        }
+
+        .icon {
+            display: inline-block;
+            height: 40px;
+            width: 40px;
+            font-size: 150%;
+            /*margin: 0;*/
+            padding: 0;
+        }
+
+        .icon:not(:first-of-type) {
+            margin-left: 12px;
+        }
+
+
+        #properties-panel {
             max-width: 768px;
             margin-right: auto;
             margin-left: auto;
             margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
         }
+
+        #properties-panel > div {
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        #properties-panel.hidden {
+            display: none;
+        }
+
+        #welcome-panel {
+            max-width: 768px;
+            margin-right: auto;
+            margin-left: auto;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #welcome-panel.hidden {
+            display: none;
+        }
+
+
+        #welcome-panel h1 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        #welcome-panel h2 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+
+        #welcome-panel ul {
+            margin-left: 24px;
+            list-style-type: disc;
+        }
+
+        #welcome-panel li {
+            margin-bottom: 8px;
+        }
+
+
     </style>
 </head>
 <body>
 <div class="left">
-    <button class="new-chat-button button" onclick="newChat()">+ New chat</button>
+    <button class="new-chat-button button clickable" onclick="newChat()">+ New chat</button>
     <ul id="chat-list" class="scroll-container"></ul>
     <div class="token-panel">
         <label for="token" class="token-label">
@@ -218,36 +315,67 @@
     </div>
 </div>
 <div class="right">
+    <div id="welcome-panel">
+        <h1>Welcome to GPT-Over-API</h1>
+        <p>Did you know that using ChatGPT through an API is much cheaper than buying a ChatGPT Plus subscription? Now
+            it's even easier for non-programmers too! Meet our lightweight alternative client that allows you to use
+            ChatGPT just as conveniently, but through a cost-effective API. Simply enter your API token in the left
+            panel. If you don't have a token yet, you can get one by following the link provided in the app.</p>
+        <h2>Main Features:</h2>
+        <ul>
+            <li>Easy to use alternative client for ChatGPT</li>
+            <li>Uses a cost-effective API instead of buying a ChatGPT Plus subscription</li>
+            <li>ChatGPT responses can be cut off mid-sentence. This client lets you set a token limit to prevent this
+                issue
+            </li>
+            <li>ChatGPT responses can vary greatly between conversations. Here you to customize parameters like model
+                selection and temperature for more consistent responses
+            </li>
+            <li>Long discussions can be hindered by incorrect responses and discarded hypotheses. Our client lets you
+                specify context data for generating more accurate and relevant answers
+            </li>
+        </ul>
+    </div>
     <div id="dialogue" class="scroll-container"></div>
     <div class="prompt">
         <textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
-        <button onclick="sendRequest()" class="button" id="send-request-button">➤</button>
+        <button class="button clickable icon" id="toggle-properties">⚙</button>
+        <button onclick="sendRequest()" class="button clickable icon" id="send-request-button">➤</button>
     </div>
-    <div class="properties">
-        <label for="model" title="Model of AI. Some models are not accessible for some users">Model:</label>
-        <select id="model">
-            <option value="gpt-4">gpt-4</option>
-            <option value="gpt-4-0314">gpt-4-0314</option>
-            <option value="gpt-4-32k">gpt-4-32k</option>
-            <option value="gpt-4-32k-0314">gpt-4-32k-0314</option>
-            <option value="gpt-3.5-turbo" selected>gpt-3.5-turbo</option>
-            <option value="gpt-3.5-turbo-0301">gpt-3.5-turbo-0301</option>
-        </select>
-        <label for="temperature"
-               title="Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic">Temperature:</label>
-        <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" value="1">
-        <label for="max-tokens"
-               title="The maximum number of tokens to generate in the chat completion. The total length of input tokens and generated tokens is limited by the model's context length">Max
-            Tokens:</label>
-        <input type="number" id="max-tokens" name="max-tokens" min="1" value="200">
-        <label for="context-strategy" title="How to select messages from the history to use them as prompt context">Context:</label>
-        <select id="context-strategy">
-            <option value="1">Last 1</option>
-            <option value="5">Last 5</option>
-            <option value="10" selected>Last 10</option>
-            <option value="100500">All</option>
-        </select>
+    <div id="properties-panel" class="hidden">
+        <div>
+            <label for="model" title="Model of AI. Some models are not accessible for some users">Model:</label>
+            <select id="model">
+                <option value="gpt-4">gpt-4</option>
+                <option value="gpt-4-0314">gpt-4-0314</option>
+                <option value="gpt-4-32k">gpt-4-32k</option>
+                <option value="gpt-4-32k-0314">gpt-4-32k-0314</option>
+                <option value="gpt-3.5-turbo" selected>gpt-3.5-turbo</option>
+                <option value="gpt-3.5-turbo-0301">gpt-3.5-turbo-0301</option>
+            </select>
+        </div>
+        <div>
+            <label for="temperature"
+                   title="Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic">Temperature:</label>
+            <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1" value="1">
+        </div>
+        <div>
+            <label for="max-tokens"
+                   title="The maximum number of tokens to generate in the chat completion. The total length of input tokens and generated tokens is limited by the model's context length">Max
+                Tokens:</label>
+            <input type="number" id="max-tokens" name="max-tokens" min="1" value="200" style="width: 50px">
+        </div>
+        <div>
+            <label for="context-strategy" title="How to select messages from the history to use them as prompt context">Context:</label>
+            <select id="context-strategy">
+                <option value="1">Last 1</option>
+                <option value="5">Last 5</option>
+                <option value="10" selected>Last 10</option>
+                <option value="100500">All</option>
+            </select>
+        </div>
     </div>
+
 </div>
 <script>
 
@@ -338,6 +466,7 @@
         `).join("");
 
         setCheckboxes();
+        welcomePanel();
     }
 
     // Custom context by checkbox logic
@@ -381,7 +510,7 @@
             listItem.textContent = name;
             const deleteButton = document.createElement("button");
             deleteButton.classList.add("chat-list-item-delete");
-            deleteButton.classList.add("button");
+            deleteButton.classList.add("clickable");
             deleteButton.textContent = "🗑️";
             deleteButton.addEventListener("click", () => deleteHistory(index));
             listItem.appendChild(deleteButton);
@@ -435,6 +564,21 @@
         contextStrategy = parseInt(contextStrategySelectbox.value);
         setCheckboxes();
     });
+
+    const toggleButton = document.getElementById("toggle-properties");
+    toggleButton.addEventListener("click", () => {
+        const propertiesPanel = document.getElementById("properties-panel");
+        propertiesPanel.classList.toggle("hidden");
+    });
+
+    // welcome panel logic
+    function welcomePanel() {
+        if (!history || history.length === 0) {
+            document.getElementById("welcome-panel").classList.remove('hidden');
+        } else {
+            document.getElementById("welcome-panel").classList.add('hidden');
+        }
+    }
 
     window.addEventListener("DOMContentLoaded", () => {
         loadChatList();
