@@ -1,6 +1,6 @@
 # GPT-Over-API
 
-GPT-Over-API is a lightweight client for OpenAI's GPT language model, which uses a cost-effective API to eliminate the risk of API token leaks. The client can be easily run from an HTML file in your browser and has no third-party dependencies, making it a simple and secure solution for interacting with GPT.
+GPT-Over-API is a lightweight client for OpenAI's GPT language model, which uses a cost-effective API. The client can be easily run from an HTML file in your browser and has no third-party dependencies or servers, making it a simple and secure solution for interacting with GPT which keeps your API token in safe.
 
 ## Getting Started
 
