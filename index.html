@@ -323,6 +323,32 @@
         .syntax-symbol {
             color: purple;
         }
+		
+		
+	.loading-spinner {
+			top:70%;
+			left:50%;
+			position:absolute;
+		width: 48px;
+		height: 48px;
+		border: 5px solid #0000FF;
+		border-bottom-color: transparent;
+		border-radius: 50%;
+		display: inline-block;
+		box-sizing: border-box;
+		animation: rotation 1s linear infinite;
+		z-index:9999;
+		display: none;
+		}
+
+		@keyframes rotation {
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
+		} 
 
 
     </style>
@@ -361,6 +387,7 @@
             </li>
         </ul>
     </div>
+	<div class="loading-spinner" id="loaderSpinner" style="display:none"></div>
     <div id="dialogue" class="scroll-container"></div>
     <div class="prompt">
         <textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
@@ -442,8 +469,10 @@
 
         const lastMessages = generateContext();
         const messages = [...lastMessages, {role: "user", content: prompt}];
-
+		
         button.disabled = true;
+		const spinnerElem = document.getElementById("loaderSpinner")
+		spinnerElem.style.display="block"
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -480,6 +509,9 @@
             button.disabled = false;
             alert(`Error: ${response.status} ${response.statusText}`);
         }
+		spinnerElem.style.display="none"
+		const scrollDivElem = document.getElementById("dialogue")
+		scrollDivElem.scrollTop = scrollDivElem.scrollHeight
     }
 
     function renderHistory() {
