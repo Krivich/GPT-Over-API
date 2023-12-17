@@ -398,11 +398,11 @@
         <div>
             <label for="model" title="Model of AI. Some models are not accessible for some users">Model:</label>
             <select id="model">
-                <option value="gpt-4">gpt-4</option>
+                <option value="gpt-4" selected>gpt-4</option>
                 <option value="gpt-4-0314">gpt-4-0314</option>
                 <option value="gpt-4-32k">gpt-4-32k</option>
                 <option value="gpt-4-32k-0314">gpt-4-32k-0314</option>
-                <option value="gpt-3.5-turbo" selected>gpt-3.5-turbo</option>
+                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                 <option value="gpt-3.5-turbo-0301">gpt-3.5-turbo-0301</option>
             </select>
         </div>
@@ -439,7 +439,7 @@
     const chatList = document.getElementById("chat-list");
 
 
-    let selectedModel = "gpt-3.5-turbo";
+    let selectedModel = "gpt-4";
     let temperature = 1;
     let maxTokens = 200;
     let contextStrategy = 10;
@@ -472,7 +472,13 @@
 		
         button.disabled = true;
 		const spinnerElem = document.getElementById("loaderSpinner")
+		const reqBtnElement = document.getElementById("send-request-button")
+		const rect = reqBtnElement.getBoundingClientRect();
+		spinnerElem.style.top = `${rect.top}px`;
+		//spinnerElem.style.left = rect.right + 20
 		spinnerElem.style.display="block"
+		
+		
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -613,7 +619,38 @@
     // Previous chat history save/load/delete/render/new logic
 
     const HISTORY_KEY = "chat-history";
-
+	const MODEL_KEY = "model-key"
+	const TEMPERATURE_KEY = "temp-key"
+	const MAX_TOKENS_KEY = "tokens-key"
+	const CONTEXT_KEY = "context-key"
+	const API_KEY = "api-key"
+	
+	function loadApiKey() {
+	const savedApiKey = localStorage.getItem(API_KEY) || "";
+	apiTokenInput.value = savedApiKey
+	}
+	
+	function loadOptions() { //TODO: Add dark mode, and load last chat on startup
+	const savedModelValue = localStorage.getItem(MODEL_KEY) || "gpt-4";
+	const savedTemperatureValue = localStorage.getItem(TEMPERATURE_KEY) || "1.0";
+	const savedContextValue = localStorage.getItem(CONTEXT_KEY) || "10"
+	const savedMaxTokensValue = localStorage.getItem(MAX_TOKENS_KEY) || "200"
+	contextStrategySelectbox.value = savedContextValue
+	contextStrategy = parseInt(savedContextValue)
+	maxTokensInput.value = savedMaxTokensValue
+	maxTokens = parseInt(savedMaxTokensValue)
+	selectedModel = savedModelValue
+	modelSelectbox.value = selectedModel
+	temperature = parseFloat(savedTemperatureValue)
+	temperatureInput.value = temperature
+	
+	}
+	
+	function saveApiKey(newApiKey) {
+	localStorage.setItem(API_KEY,newApiKey)
+	}
+	
+	
     function newChat() {
         history = [];
         renderHistory();
@@ -667,22 +704,26 @@
     const modelSelectbox = document.getElementById("model");
     modelSelectbox.addEventListener("change", () => {
         selectedModel = modelSelectbox.value;
+		localStorage.setItem(MODEL_KEY,selectedModel)
     });
 
     const temperatureInput = document.getElementById("temperature");
     temperatureInput.addEventListener("input", () => {
         temperature = parseFloat(temperatureInput.value);
+		localStorage.setItem(TEMPERATURE_KEY,temperature);
     });
 
     const maxTokensInput = document.getElementById("max-tokens");
     maxTokensInput.addEventListener("input", () => {
         maxTokens = parseInt(maxTokensInput.value);
+		localStorage.setItem(MAX_TOKENS_KEY,maxTokens)
     });
 
     const contextStrategySelectbox = document.getElementById("context-strategy");
     contextStrategySelectbox.addEventListener("change", () => {
         contextStrategy = parseInt(contextStrategySelectbox.value);
         setCheckboxes();
+		localStorage.setItem(CONTEXT_KEY,contextStrategy)
     });
 
     const toggleButton = document.getElementById("toggle-properties");
@@ -690,6 +731,8 @@
         const propertiesPanel = document.getElementById("properties-panel");
         propertiesPanel.classList.toggle("hidden");
     });
+	
+	
 
     // welcome panel logic
     function welcomePanel() {
@@ -702,6 +745,12 @@
 
     window.addEventListener("DOMContentLoaded", () => {
         loadChatList();
+		loadApiKey();
+		loadOptions();
+		apiTokenInput.addEventListener("change", function(event) {
+		  const newValue = event.target.value; // Get the new value of the input
+		  saveApiKey(newValue) // Save the value to localStorage with a key
+		});
     });
 
 </script>
