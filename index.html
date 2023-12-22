@@ -10,12 +10,31 @@
     <meta name="author" content="Krivich (https://github.com/Krivich)">
     <title>GPT-Over-API ChatGPT Client</title>
     <style>
+        :root {
+            --bg-color-light: #fff;
+            --bg-color-dark: #333;
+            --text-color-light: #000;
+            --text-color-dark: #fff;
+            --border-color-light: rgba(0, 0, 0, .1);
+            --border-color-dark: rgba(255, 255, 255, .1);
+            }
+
         body {
             margin: 0;
             padding: 0;
             display: flex;
             height: 100vh;
-            background-color: #fff;
+            background-color: var(--bg-color-light);
+            /* background-color: #fff; */
+        }
+
+        body.dark {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        height: 100vh;
+        background-color: var(--bg-color-dark);
+        color: var(--text-color-dark);
         }
 
         textarea,
@@ -133,9 +152,17 @@
             width: 5px;
         }
 
-        ::-webkit-scrollbar-thumb {
+        /* ::-webkit-scrollbar-thumb {
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0.1);
+        } */
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(154, 150, 149, 0.2);
+            border-radius: 1px;
         }
 
         ::-webkit-scrollbar-track {
@@ -166,6 +193,19 @@
             max-width: 765px;
             white-space: pre-wrap;
             margin-left: auto;
+        }
+
+        body.dark .message {
+        width: 100%;
+        border-bottom: 1px solid var(--border-color-dark);
+        background-color: var(--bg-color-dark);
+        display: flex;
+        align-items: center;
+        padding: 24px 0 24px 0;
+        }
+
+        body.dark .message:nth-child(even) {
+        background-color: rgb(55, 55, 58);
         }
 
         .message .message-content:nth-child(even) {
@@ -201,6 +241,23 @@
             background-color: rgb(66, 133, 244);
         }
 
+        #toggle-dark-mode {
+            background-color: rgb(32, 33, 35);
+            position: absolute;
+            z-index: 9999;
+            top: 2vh;
+            left:45vh;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            /* display: inline-block; */
+            height: 40px;
+            width: 40px;
+            font-size: 150%;
+            padding: 0;
+        }
+
 
         .button {
             margin-left: 24px;
@@ -231,7 +288,6 @@
             height: 40px;
             width: 40px;
             font-size: 150%;
-            /*margin: 0;*/
             padding: 0;
         }
 
@@ -306,10 +362,11 @@
             margin: 10px 0;
             border: 1px solid #ffffff;
             border-radius: 5px;
+            overflow-x: auto;
         }
 
         .syntax-bracket {
-            color: blue;
+            color: #267AAC;
         }
 
         .syntax-quote {
@@ -388,6 +445,7 @@
         </ul>
     </div>
 	<div class="loading-spinner" id="loaderSpinner" style="display:none"></div>
+    <button class="clickable" id="toggle-dark-mode">🌙</button>
     <div id="dialogue" class="scroll-container"></div>
     <div class="prompt">
         <textarea id="input" rows="3" cols="50" placeholder="Input your prompt here"></textarea><br>
@@ -437,7 +495,7 @@
     const button = document.getElementById("send-request-button");
 
     const chatList = document.getElementById("chat-list");
-
+    const darkModeBtn = document.getElementById("toggle-dark-mode");
 
     let selectedModel = "gpt-4";
     let temperature = 1;
@@ -501,6 +559,8 @@
         if (response.ok) {
             const json = await response.json();
             const message = json.choices[0].message.content;
+            /* message = escapeHtml(message)
+            prompt = escapeHtml(prompt) */
             history.push({role: "user", content: prompt}, {role: "assistant", content: message});
 
             renderHistory();
@@ -516,8 +576,7 @@
             alert(`Error: ${response.status} ${response.statusText}`);
         }
 		spinnerElem.style.display="none"
-		const scrollDivElem = document.getElementById("dialogue")
-		scrollDivElem.scrollTop = scrollDivElem.scrollHeight
+		setDialogueScrollBottom()
     }
 
     function renderHistory() {
@@ -531,6 +590,7 @@
 
                 // Loop through each section and render accordingly
                 for (let i = 0; i < contentSections.length; i++) {
+                    //const section = escapeHtml(contentSections[i]);
                     const section = contentSections[i];
 
                     // If the section is a code block, wrap it in a <pre> tag and mark as a code block
@@ -538,12 +598,12 @@
                         messageContent += `<pre class="code">${highlightSyntax(section)}</pre>`;
                         isCodeBlock = false;
                     } else {
-                        messageContent += section;
+                        messageContent += escapeHtml(section);
                         isCodeBlock = true;
                     }
                 }
 
-                // Render the message HTML with a checkbox for each message
+
                 return `
         <div class="message">
           <span class="message-content">${messageContent}</span>
@@ -556,6 +616,15 @@
         setCheckboxes();
         welcomePanel();
     }
+
+    function escapeHtml(str) {
+  return str.replace(/<|>/g, function(match) {
+    return match === '<' ? '&lt;' : '&gt;';
+  });
+}
+
+
+
 
     function highlightSyntax(text) {
         // Regular expressions for syntax highlighting
@@ -624,7 +693,8 @@
 	const MAX_TOKENS_KEY = "tokens-key"
 	const CONTEXT_KEY = "context-key"
 	const API_KEY = "api-key"
-	
+	const DARK_MODE_KEY = "dark-mode-key"
+
 	function loadApiKey() {
 	const savedApiKey = localStorage.getItem(API_KEY) || "";
 	apiTokenInput.value = savedApiKey
@@ -635,6 +705,7 @@
 	const savedTemperatureValue = localStorage.getItem(TEMPERATURE_KEY) || "1.0";
 	const savedContextValue = localStorage.getItem(CONTEXT_KEY) || "10"
 	const savedMaxTokensValue = localStorage.getItem(MAX_TOKENS_KEY) || "200"
+    const savedDarkModeValue = localStorage.getItem(DARK_MODE_KEY) || "off"
 	contextStrategySelectbox.value = savedContextValue
 	contextStrategy = parseInt(savedContextValue)
 	maxTokensInput.value = savedMaxTokensValue
@@ -643,6 +714,8 @@
 	modelSelectbox.value = selectedModel
 	temperature = parseFloat(savedTemperatureValue)
 	temperatureInput.value = temperature
+    if(savedDarkModeValue==="on")
+        document.body.classList.toggle('dark');
 	
 	}
 	
@@ -674,6 +747,7 @@
             listItem.addEventListener("click", () => {
                 history = item.history;
                 renderHistory();
+                setDialogueScrollBottom()
             });
             chatList.appendChild(listItem);
         });
@@ -743,10 +817,34 @@
         }
     }
 
+    function toggleDarkMode () {
+        document.body.classList.toggle('dark');
+        const savedDarkModeValue = localStorage.getItem(DARK_MODE_KEY)
+        if(savedDarkModeValue==="off")
+            localStorage.setItem(DARK_MODE_KEY,"on")
+        else
+            localStorage.setItem(DARK_MODE_KEY,"off")
+        }
+
+// Call this function when your dark mode toggle is clicked
+//toggleDarkMode();
+
+        function setDialogueScrollBottom(){
+            const scrollDivElem = document.getElementById("dialogue")
+		    scrollDivElem.scrollTop = scrollDivElem.scrollHeight
+        }
+
+        function setChatListScrollBottom(){
+            const chatListElem = document.getElementById("chat-list")
+            chatListElem.scrollTop = chatListElem.scrollHeight
+        }
+
     window.addEventListener("DOMContentLoaded", () => {
         loadChatList();
+        setChatListScrollBottom()
 		loadApiKey();
 		loadOptions();
+        darkModeBtn.addEventListener("click", toggleDarkMode)
 		apiTokenInput.addEventListener("change", function(event) {
 		  const newValue = event.target.value; // Get the new value of the input
 		  saveApiKey(newValue) // Save the value to localStorage with a key
