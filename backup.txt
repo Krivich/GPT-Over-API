@@ -1,9 +1,0 @@
- const escapedMessageContent = escapeHtml(messageContent);
-                return `
-        <div class="message">
-          <span class="message-content">${messageContent}</span>
-          <input type="checkbox" class="message-checkbox" title="Choose messages to use as context for your prompt">
-        </div>
-      `;
-            })
-            .join("");
