@@ -1,0 +1,26 @@
+{
+  "name": "gpt-over-api",
+  "version": "1.0.0",
+  "description": "A single-page chat application that connects to LLM API",
+  "main": "index.html",
+  "scripts": {
+    "build": "node build.cjs",
+    "watch": "node build.cjs --watch",
+    "start": "npx serve .",
+    "test": "npx playwright test",
+    "test:setup": "npx playwright install"
+  },
+  "keywords": [
+    "llm",
+    "chat",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0",
+    "@playwright/test": "^1.40.0",
+    "serve": "^14.2.0"
+  }
+}
