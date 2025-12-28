@@ -9,15 +9,13 @@ export class ChatPanel implements IChatPanel {
         this.element.innerHTML = '';
     }
 
-    addMessage(text: string, role: 'user' | 'assist' | 'assistant'): void {
+    addMessage(text: string, role: 'user' | 'assistant'): void {
         const msg = document.createElement('div');
         msg.className = `msg ${role}`;
 
-        // Apply markdown formatting only for assistant messages
-        if (role === 'assist' || role === 'assistant') {
+        if (role === 'assistant') {
             msg.innerHTML = md(text);
         } else {
-            // For user messages, just use textContent to prevent any HTML injection
             msg.textContent = text;
         }
 
@@ -25,12 +23,9 @@ export class ChatPanel implements IChatPanel {
         this.scrollToBottom();
     }
 
-    // Method to add a message widget
-    addMessageWidget(widget: HTMLElement, role: 'user' | 'assist' | 'assistant'): void {
-        // Copy classes to preserve ha-widget and others
-        const classes = Array.from(widget.classList);
-        // Add message classes
-        widget.className = `msg ${role} ${classes.join(' ')}`;
+    addMessageWidget(widget: HTMLElement, role: 'user' | 'assistant'): void {
+        // Добавляем классы для стилизации
+        widget.classList.add('msg', role);
         this.element.appendChild(widget);
         this.scrollToBottom();
     }

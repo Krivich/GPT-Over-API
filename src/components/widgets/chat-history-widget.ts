@@ -58,7 +58,7 @@ export class ChatHistoryWidget {
             widget.classList.add('frozen');
         };
 
-        this.chatPanel.addMessageWidget(widget, 'assist');
+        this.chatPanel.addMessageWidget(widget, 'assistant');
 
         return { freeze };
     }

@@ -205,6 +205,9 @@
             /* Ключевое исправление: карточки не двигаются, только тени */
             transform: none !important;
             will-change: box-shadow;
+            display: flex;
+            gap: var(--ha-space-3);
+            align-items: flex-start;
         }
 
         .msg:hover {
@@ -219,6 +222,7 @@
             background-color: var(--ha-color-user-bg);
             border-radius: var(--ha-radius-md) 0 var(--ha-radius-md) var(--ha-radius-md);
             border-right: 3px solid var(--ha-color-primary);
+            margin-left: auto;
         }
 
         .msg.assist {
@@ -228,60 +232,78 @@
             border-left: 3px solid var(--ha-color-coach-border);
         }
 
+        /* Checkbox styles */
+        .msg-checkbox-container {
+            display: flex;
+            flex-shrink: 0;
+            margin-top: 4px; /* Для выравнивания с контентом */
+        }
+
+        .msg-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--ha-color-primary);
+            cursor: default;
+        }
+
+        /* Message content wrapper */
+        .message-content-wrapper {
+            flex: 1;
+            min-width: 0; /* Для правильного обрезания длинных слов */
+        }
+
         /* Typography for markdown content */
-        .msg p {
+        .msg.assist .message-content {
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .msg.assist .message-content p {
             margin: 0 0 var(--ha-space-3) 0;
         }
 
-        .msg h1, .msg h2, .msg h3 {
+        .msg.assist .message-content h1,
+        .msg.assist .message-content h2,
+        .msg.assist .message-content h3 {
             font-weight: 600;
             margin-top: var(--ha-space-5);
             margin-bottom: var(--ha-space-3);
             color: var(--ha-color-text-primary);
         }
 
-        .msg h1 { font-size: 1.5rem; }
-        .msg h2 { font-size: 1.25rem; }
-        .msg h3 { font-size: 1.1rem; }
-
-        .msg strong {
+        .msg.assist .message-content strong {
             font-weight: 600;
             color: var(--ha-color-text);
         }
 
-        /* ИСПРАВЛЕНО: Убраны линии в коде */
-        .msg code {
+        .msg.assist .message-content ul {
+            padding-left: var(--ha-space-5);
+            margin: var(--ha-space-3) 0;
+        }
+
+        .msg.assist .message-content li {
+            margin-bottom: var(--ha-space-2);
+        }
+
+        /* Code blocks - ИСПРАВЛЕНО: убраны линии */
+        .msg.assist .message-content code {
             background: #f8f6f3;
             padding: 2px 6px;
             border-radius: 4px;
             font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
             font-size: 13px;
-            border: none; /* Убираем границы */
-            text-shadow: none; /* Убираем возможные тени */
-            display: inline-block; /* Для корректного отображания */
+            display: inline-block;
         }
 
-        .msg pre {
+        .msg.assist .message-content pre {
             background: #f8f6f3;
             padding: var(--ha-space-3);
             border-radius: var(--ha-radius-md);
             overflow-x: auto;
             margin: var(--ha-space-4) 0;
-            border: none; /* Убираем границы */
-            line-height: 1.45; /* Чёткий интерлиньяж без линий */
-            /* Убираем все возможные декорации, создающие линии */
-            text-decoration: none;
-            box-shadow: inset 0 1px 0 rgba(0,0,0,0.05), inset 0 -1px 0 rgba(0,0,0,0.05);
-            box-shadow: none !important; /* Полностью убираем тени внутри */
-        }
-
-        .msg ul {
-            padding-left: var(--ha-space-5);
-            margin: var(--ha-space-3) 0;
-        }
-
-        .msg li {
-            margin-bottom: var(--ha-space-2);
+            border: none;
+            line-height: 1.45;
+            box-shadow: none !important;
         }
 
         /* Input area */
@@ -557,6 +579,10 @@
             to { transform: rotate(360deg); }
         }
 
+        .icon-spin {
+            animation: spin 1.5s linear infinite;
+        }
+
         @keyframes ripple {
             0% {
                 transform: scale(0,0);
@@ -630,6 +656,10 @@
             <path d="M17.2928932,3.29289322 L21,7 L21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 L16.5857864,3 C16.8510029,3 17.1053568,3.10535684 17.2928932,3.29289322 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <rect width="10" height="8" x="7" y="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <rect width="8" height="5" x="8" y="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="icon-feather" viewBox="0 0 24 24">
+            <title>Feather</title>
+            <path d="M5.12634 17C5.04271 17.6571 5 18.325 5 19V21M5.12634 17C6.03384 9.86861 11.7594 4 20 4L19 8H16L17 10L15 12H11L13 14L12 16H8L5.12634 17Z"/>
         </symbol>
     </svg>
     <!-- Main chat area -->
@@ -711,8 +741,15 @@
 
     <!-- Template for message widget -->
     <template id="message-widget-template">
-        <div class="ha-widget">
-            <div class="message-content"></div>
+        <div class="ha-widget msg">
+            <div class="msg-checkbox-container"></div>
+            <div class="message-content" style="display: none;"></div>
+            <div class="message-loading" style="display: none;">
+                <svg class="icon icon-spin" style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;">
+                    <use href="#icon-settings"></use>
+                </svg>
+                <span>Thinking...</span>
+            </div>
         </div>
     </template>
 

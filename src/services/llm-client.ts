@@ -39,7 +39,10 @@ export class LLMClient implements ILLMClient {
             },
             body: JSON.stringify({
                 model: this.config.model,
-                messages: messages,
+                messages: messages.map(({ id, metadata, ...apiMsg }) => ({
+                    ...apiMsg,
+                    role: (apiMsg.role as string) === 'assist' ? 'assistant' : apiMsg.role  // Map 'assist' to 'assistant' for API
+                })), // Exclude id and metadata when sending to API, and map roles
                 temperature: 0.7,
                 max_tokens: 1024
             }),

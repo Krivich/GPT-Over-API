@@ -124,7 +124,11 @@ export const DEFAULTS = {
             generationMs: 60000
         },
         maxRetries: 3,
-        retryDelayBaseMs: 1000
+        retryDelayBaseMs: 1000,
+        context: {
+            lastMessages: 5,
+            ragMessages: 3
+        }
     }
 } as const;
 

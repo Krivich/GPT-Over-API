@@ -1,8 +1,13 @@
 // src/types.ts
 
 export interface Message {
-    role: 'user' | 'assistant' | 'assist';
+    id: string;
+    role: 'user' | 'assistant';
     content: string;
+    metadata?: {
+        tfidfTokens?: string[]; // или просто boolean "indexable"
+        indexedAt?: number;      // timestamp индексации
+    };
 }
 
 export type TerminateReason = 'save' | 'freeze';

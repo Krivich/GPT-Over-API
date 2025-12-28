@@ -63,7 +63,7 @@ export class ConfigView {
             };
 
             localStorage.setItem('gptOverApiConfig', JSON.stringify(newConfig));
-            this.chatPanel.addMessage(appConfig.getText('messages.apiKeySaved', '✅ LLM config saved.'), 'assist');
+            this.chatPanel.addMessage(appConfig.getText('messages.apiKeySaved', '✅ LLM config saved.'), 'assistant');
 
             // Trigger a custom event to notify that config has changed
             window.dispatchEvent(new CustomEvent('llmConfigChanged', { detail: newConfig }));
@@ -71,7 +71,7 @@ export class ConfigView {
             freeze(); // после сохранения — фризим
         });
 
-        this.chatPanel.addMessageWidget(widget, 'assist');
+        this.chatPanel.addMessageWidget(widget, 'assistant');
 
         return { freeze };
     }

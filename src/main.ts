@@ -6,6 +6,8 @@ import { LLMClient } from './services/llm-client.js';
 import { ChatHistoryWidget } from './components/widgets/chat-history-widget.js';
 import { Message, Terminable } from './types.js';
 import { appConfig } from './config/app-config.js';
+import { ChatTfidfIndex } from './services/tfidf-index.js';
+import { MessageWidget } from './components/widgets/message-widget.js';
 
 class GPTOverAPIApp {
     private chatPanel: IChatPanel;
@@ -14,21 +16,19 @@ class GPTOverAPIApp {
     private currentChatId: string | null = null;
     private abortController: AbortController | null = null;
     private isProcessing = false;
-    private activeWidgets: Map<string, Terminable> = new Map(); // Track active widgets by type
-    private currentChatMessages: Message[] = []; // Store the actual message history for context
+    private activeWidgets: Map<string, Terminable> = new Map();
+    private currentChatMessages: Message[] = [];
+    private tfidfIndex: ChatTfidfIndex = new ChatTfidfIndex();
+    private contextPreviewDebounceTimer: number | null = null;
 
     constructor() {
-        // Initialize components
         const chatContainer = document.getElementById('chat-container');
-        
         if (!chatContainer) {
             throw new Error('Required DOM elements not found');
         }
-        
         this.chatPanel = new ChatPanel(chatContainer);
         this.llmClient = new LLMClient();
         this.configView = new ConfigView(this.chatPanel);
-        
         this.setupEventHandlers();
         this.loadInitialChat();
     }
@@ -44,7 +44,6 @@ class GPTOverAPIApp {
             throw new Error('Input elements not found');
         }
 
-        // Send button click handler
         sendBtn.addEventListener('click', () => {
             if (this.isProcessing) {
                 this.cancelCurrentRequest();
@@ -53,7 +52,6 @@ class GPTOverAPIApp {
             }
         });
 
-        // Enter key handler
         inputField.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
                 e.preventDefault();
@@ -63,22 +61,21 @@ class GPTOverAPIApp {
             }
         });
 
-        // Settings button
+        inputField.addEventListener('input', () => {
+            this.updateContextHighlights(inputField.value.trim());
+        });
+
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
                 this.showWidget(this.configView);
             });
         }
 
-        // Listen for LLM config changes to recreate client with new settings
         window.addEventListener('llmConfigChanged', () => {
-            // Recreate the LLM client to pick up new settings
             this.llmClient = new LLMClient();
-            // Update the title to reflect the new model
             appConfig.updateTitleWithModel();
         });
 
-        // Chat history button
         if (chatHistoryBtn) {
             chatHistoryBtn.addEventListener('click', () => {
                 const chatHistoryWidget: IWidget = new ChatHistoryWidget(
@@ -90,7 +87,6 @@ class GPTOverAPIApp {
             });
         }
 
-        // New chat button (if it exists in the chat history widget template)
         if (newChatBtn) {
             newChatBtn.addEventListener('click', () => {
                 this.startNewChat();
@@ -98,70 +94,128 @@ class GPTOverAPIApp {
         }
     }
 
+    private updateContextHighlights(query: string): void {
+        if (this.contextPreviewDebounceTimer) {
+            clearTimeout(this.contextPreviewDebounceTimer);
+        }
+
+        this.contextPreviewDebounceTimer = window.setTimeout(() => {
+            this.contextPreviewDebounceTimer = null;
+
+            const contextMsgs = this.getContextMessages(query, this.currentChatMessages);
+            const contextIds = new Set(contextMsgs.map(m => m.id));
+
+            document.querySelectorAll('.msg-checkbox').forEach(cb => {
+                const checkbox = cb as HTMLInputElement;
+                const id = checkbox.dataset.messageId;
+                if (id) {
+                    checkbox.checked = contextIds.has(id);
+                }
+            });
+        }, 300);
+    }
+
+    private getContextMessages(query: string, allMessages: Message[]): Message[] {
+        const N = appConfig.get(5, 'llm.context.lastMessages');
+        const K = appConfig.get(3, 'llm.context.ragMessages');
+
+        const lastN = allMessages.slice(-N);
+        const earlier = allMessages.slice(0, -N);
+        const relevantIds = new Set<string>();
+
+        // Добавляем последние N сообщений
+        lastN.forEach(msg => relevantIds.add(msg.id));
+
+        // Если есть запрос и сообщения в истории, добавляем K релевантных
+        if (K > 0 && query.trim() && earlier.length > 0) {
+            const relevantMessageIds = this.tfidfIndex.findRelevant(query, K);
+            relevantMessageIds.forEach(id => relevantIds.add(id));
+        }
+
+        // Собираем контекст в хронологическом порядке
+        return allMessages.filter(msg => relevantIds.has(msg.id));
+    }
+
     private async handleSendMessage(): Promise<void> {
         const inputField = document.getElementById('user-input') as HTMLInputElement;
         const sendBtn = document.getElementById('send-btn') as HTMLButtonElement;
-        
         if (!inputField) return;
-        
+
         const message = inputField.value.trim();
         if (!message) return;
-        
-        // Disable input and change button to cancel
+
         inputField.disabled = true;
         sendBtn.textContent = 'Cancel';
         this.isProcessing = true;
-        
-        // Clear input
         inputField.value = '';
-        
+
         try {
-            // Add user message to chat
-            this.chatPanel.addMessage(message, 'user');
-            
-            // Add user message to context history
-            this.currentChatMessages.push({ role: 'user', content: message });
-            
-            // Create abort controller for this request
+            const userMessageId = this.generateId();
+            const userMessage = { id: userMessageId, role: 'user' as const, content: message };
+
+            // Добавляем сообщение в чат через виджет
+            const userWidget = new MessageWidget(message, userMessageId);
+            this.chatPanel.addMessageWidget(userWidget.getElement(), 'user');
+
+            // Добавляем в контекст
+            this.currentChatMessages.push(userMessage);
+
+            // Обновляем индекс
+            this.updateTfidfIndex();
+
             this.abortController = new AbortController();
 
-            // Prepare messages for API call - include full chat history
-            const messages: Message[] = [...this.currentChatMessages]; // Copy existing messages
-            
-            // Add the new user message
-            messages.push({ role: 'user', content: message });
+            // Формируем контекст для отправки в LLM
+            const contextMessages = this.getContextMessages(message, this.currentChatMessages);
 
-            // Get response from LLM
-            const response = await this.llmClient.call(messages, this.abortController.signal);
+            // Используем оригинальные сообщения (с id), LLMClient сам преобразует их для API
+            const apiMessages = contextMessages;
 
-            // Check if the response indicates API configuration is needed
+            // Создаем виджет с загрузкой для ответа ассистента
+            const assistMessageId = this.generateId();
+            const assistWidget = new MessageWidget('', assistMessageId); // Empty content to show loading
+            this.chatPanel.addMessageWidget(assistWidget.getElement(), 'assistant');
+
+            // Получаем ответ
+            const response = await this.llmClient.call(apiMessages, this.abortController.signal);
+
             if (response === 'API_KEY_NOT_CONFIGURED') {
-                // Show the config widget automatically and inform the user
-                this.chatPanel.addMessage(appConfig.getText('messages.apiKeyNotConfigured', 'Please configure your LLM settings first.'), 'assist');
+                // Обновляем виджет с сообщением об ошибке
+                assistWidget.updateContent(appConfig.getText('messages.apiKeyNotConfigured', 'Please configure your LLM settings first.'));
                 this.configView.show();
-                // Remove the user message from context history since we're not proceeding
+                // Удаляем только что добавленное сообщение из контекста
                 this.currentChatMessages.pop();
-                return; // Exit early since we don't want to save this interaction
+                return;
             }
 
-            // Add assistant response to chat
-            this.chatPanel.addMessage(response, 'assist');
+            // Обновляем виджет с ответом
+            assistWidget.updateContent(response);
 
-            // Add assistant response to context history
-            this.currentChatMessages.push({ role: 'assistant', content: response });
+            // Добавляем ответ ассистента в контекст
+            const assistMessage = {
+                id: assistMessageId,
+                role: 'assistant' as const,
+                content: response
+            };
 
-            // Save message to current chat history
-            this.saveMessageToChat(message, 'user');
-            this.saveMessageToChat(response, 'assistant');
+            this.currentChatMessages.push(assistMessage);
+
+            // Сохраняем в историю чата
+            if (this.currentChatId) {
+                this.saveMessageToChat(userMessage);
+                this.saveMessageToChat(assistMessage);
+            }
+
+            // Сброс галочек после отправки
+            this.clearContextHighlights();
 
         } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
-                this.chatPanel.addMessage('Request cancelled.', 'assist');
+                this.chatPanel.addMessage('Request cancelled.', 'assistant');
             } else {
-                this.chatPanel.addMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assist');
+                this.chatPanel.addMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
             }
         } finally {
-            // Re-enable input and restore button
             inputField.disabled = false;
             sendBtn.textContent = 'Send';
             this.isProcessing = false;
@@ -176,29 +230,36 @@ class GPTOverAPIApp {
     }
 
     private startNewChat(): void {
-        // Clear current chat
         this.chatPanel.clear();
-        this.chatPanel.addMessage('Hello! How can I help you today?', 'assist');
+        this.currentChatMessages = [];
 
-        // Initialize context for new chat
-        this.currentChatMessages = [{ role: 'assistant', content: 'Hello! How can I help you today?' }];
+        // Добавляем приветственное сообщение
+        const welcomeId = this.generateId();
+        const welcomeMessage = {
+            id: welcomeId,
+            role: 'assistant' as const,
+            content: appConfig.getText('app.greeting', 'Hello! How can I help you today?')
+        };
 
-        // Create new chat in sidebar
-        const newChatId = this.addChatToHistory('New Chat');
+        const welcomeWidget = new MessageWidget(welcomeMessage.content, welcomeId);
+        this.chatPanel.addMessageWidget(welcomeWidget.getElement(), 'assistant');
+
+        this.currentChatMessages.push(welcomeMessage);
+
+        // Создаем новый чат
+        const newChatId = this.addChatToHistory(appConfig.getText('app.newChatTitle', 'New Chat'));
         this.currentChatId = newChatId;
 
-        // Store empty chat history
-        this.saveChatHistory(newChatId, []);
+        // Обновляем индекс
+        this.tfidfIndex.buildIndex(this.currentChatMessages);
     }
 
     private loadInitialChat(): void {
-        // Check if there are existing chats
         const storedHistory = localStorage.getItem('gptOverApiChatHistory');
         if (storedHistory) {
             try {
                 const history = JSON.parse(storedHistory);
                 if (history.length > 0) {
-                    // Load the most recent chat
                     this.loadChat(history[0].id);
                     return;
                 }
@@ -206,8 +267,6 @@ class GPTOverAPIApp {
                 console.error('Error loading initial chat:', e);
             }
         }
-
-        // If no existing chats, start a new one
         this.startNewChat();
     }
 
@@ -215,70 +274,79 @@ class GPTOverAPIApp {
         try {
             const chatData = localStorage.getItem(`gptOverApiChat_${chatId}`);
             if (chatData) {
-                const messages = JSON.parse(chatData);
+                const messages = JSON.parse(chatData).map((msg: any) => ({
+                    ...msg,
+                    id: msg.id || this.generateId()
+                }));
 
-                // Clear current chat panel
                 this.chatPanel.clear();
-
-                // Clear current chat messages context
                 this.currentChatMessages = [];
 
-                // Add all messages to the chat panel and context
+                // Добавляем сообщения через виджеты
                 messages.forEach((msg: Message) => {
-                    this.chatPanel.addMessage(msg.content, msg.role);
+                    // Convert 'assist' role to 'assistant' for display
+                    const displayRole = (msg.role as string) === 'assist' ? 'assistant' : msg.role;
+                    const widget = new MessageWidget(msg.content, msg.id);
+                    this.chatPanel.addMessageWidget(widget.getElement(), displayRole);
+                    // Update the message role to 'assistant' if it was 'assist'
+                    if ((msg.role as string) === 'assist') {
+                        (msg as any).role = 'assistant';
+                    }
                     this.currentChatMessages.push(msg);
                 });
+
+                // Восстанавливаем или строим индекс
+                const cachedIndex = localStorage.getItem(`gptOverApiChatIndex_${chatId}`);
+                if (cachedIndex && this.tfidfIndex.deserialize(cachedIndex, this.currentChatMessages)) {
+                    console.log('TF-IDF index restored from cache');
+                } else {
+                    this.tfidfIndex.buildIndex(this.currentChatMessages);
+                    if (this.currentChatId) {
+                        localStorage.setItem(`gptOverApiChatIndex_${this.currentChatId}`, this.tfidfIndex.serialize());
+                    }
+                }
             } else {
-                // If no data found, start with a greeting
-                this.chatPanel.clear();
-                this.chatPanel.addMessage('Hello! How can I help you today?', 'assist');
-                // Initialize context for new chat
-                this.currentChatMessages = [{ role: 'assistant', content: 'Hello! How can I help you today?' }];
+                this.startNewChat();
             }
 
             this.currentChatId = chatId;
         } catch (e) {
             console.error('Error loading chat:', e);
-            this.chatPanel.clear();
-            this.chatPanel.addMessage('Error loading chat. Starting a new conversation.', 'assist');
-            // Initialize context on error
-            this.currentChatMessages = [{ role: 'assistant', content: 'Error loading chat. Starting a new conversation.' }];
             this.startNewChat();
         }
     }
 
-    private saveMessageToChat(content: string, role: 'user' | 'assistant' | 'assist'): void {
+    private saveMessageToChat(message: Message): void {
         if (!this.currentChatId) return;
 
         try {
-            // Load existing messages
             let messages: Message[] = [];
             const stored = localStorage.getItem(`gptOverApiChat_${this.currentChatId}`);
             if (stored) {
                 messages = JSON.parse(stored);
             }
 
-            // Add new message
-            messages.push({ role, content });
-
-            // Save updated messages
+            messages.push(message);
             localStorage.setItem(`gptOverApiChat_${this.currentChatId}`, JSON.stringify(messages));
 
-            // Update chat title if it's the first message
-            if (messages.length === 1 && role === 'user') {
-                this.updateChatTitle(this.currentChatId, content.substring(0, 30) + (content.length > 30 ? '...' : ''));
+            // Обновляем название чата для первого сообщения пользователя
+            if (messages.length === 2 && message.role === 'user') {
+                const title = message.content.substring(0, 30) + (message.content.length > 30 ? '...' : '');
+                this.updateChatTitle(this.currentChatId, title);
             }
+
+            // Обновляем индекс и кэш
+            this.updateTfidfIndex();
         } catch (e) {
             console.error('Error saving message to chat:', e);
         }
     }
 
-    private saveChatHistory(chatId: string, messages: Message[]): void {
-        try {
-            localStorage.setItem(`gptOverApiChat_${chatId}`, JSON.stringify(messages));
-        } catch (e) {
-            console.error('Error saving chat history:', e);
-        }
+    private updateTfidfIndex(): void {
+        if (!this.currentChatId) return;
+
+        this.tfidfIndex.buildIndex(this.currentChatMessages);
+        localStorage.setItem(`gptOverApiChatIndex_${this.currentChatId}`, this.tfidfIndex.serialize());
     }
 
     private updateChatTitle(chatId: string, title: string): void {
@@ -301,24 +369,19 @@ class GPTOverAPIApp {
         const id = this.generateId();
         const newChat = {
             id,
-            title: title.substring(0, 50), // Limit title length
+            title: title.substring(0, 50),
             timestamp: Date.now()
         };
 
         try {
-            // Load existing history
             let history = [];
             const stored = localStorage.getItem('gptOverApiChatHistory');
             if (stored) {
                 history = JSON.parse(stored);
             }
 
-            // Add new chat to beginning
             history.unshift(newChat);
-
-            // Save updated history
             localStorage.setItem('gptOverApiChatHistory', JSON.stringify(history));
-
             return id;
         } catch (e) {
             console.error('Error adding chat to history:', e);
@@ -331,7 +394,6 @@ class GPTOverAPIApp {
     }
 
     private showWidget(widget: IWidget): void {
-        // If the widget has a type, deactivate any existing widget of the same type
         if (widget.getType) {
             const widgetType = widget.getType();
             if (widgetType) {
@@ -340,24 +402,25 @@ class GPTOverAPIApp {
                     existingWidget.freeze();
                 }
 
-                // Show the new widget and track it
                 const newWidget = widget.show();
                 this.activeWidgets.set(widgetType, newWidget);
             } else {
-                // If no type, just show the widget without tracking
                 widget.show();
             }
         } else {
-            // If no getType method, just show the widget
             widget.show();
         }
     }
+
+    private clearContextHighlights(): void {
+        document.querySelectorAll('.msg-checkbox').forEach(cb => {
+            (cb as HTMLInputElement).checked = false;
+        });
+    }
 }
 
-// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
     await appConfig.init();
     new GPTOverAPIApp();
-    // Update the title to show the current model
     appConfig.updateTitleWithModel();
 });
