@@ -1,4 +1,4 @@
-// src/services/tfidf-index.ts
+// src/services/chat-tfidf-index.ts
 import { Message } from '../types.js';
 
 // Минимальная совместимая обертка над tfidf-rag-index.js
@@ -99,13 +99,16 @@ export class ChatTfidfIndex {
         this.index = new TfidfRagIndex(texts);
     }
 
-    findRelevant(query: string, topK: number): string[] {
+    // THESIS: Возвращаем Message[] вместо string[] для типобезопасности и сохранения метаданных
+    findRelevant(query: string, topK: number): Message[] {
         if (!this.index || topK <= 0 || !query.trim()) {
             return [];
         }
 
         const results = this.index.search(query, topK);
-        return results.map(r => this.positionToId[r.index]).filter(Boolean);
+        return results
+            .map(r => this.messageById.get(this.positionToId[r.index]))
+            .filter((msg): msg is Message => !!msg); // TypeScript guard для фильтрации undefined
     }
 
     serialize(): string {
@@ -130,7 +133,7 @@ export class ChatTfidfIndex {
             // Перестраиваем индекс только если есть сообщения для индексации
             const indexable = this.positionToId
                 .map(id => this.messageById.get(id))
-                .filter(Boolean) as Message[];
+                .filter((msg): msg is Message => !!msg);
 
             if (indexable.length > 0) {
                 const texts = indexable.map(msg => msg.content);
@@ -139,7 +142,7 @@ export class ChatTfidfIndex {
             }
             return false;
         } catch (e) {
-            console.warn('Failed to deserialize TF-IDF index');
+            console.warn('Failed to deserialize TF-IDF index', e);
             return false;
         }
     }

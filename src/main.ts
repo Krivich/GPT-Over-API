@@ -20,6 +20,7 @@ class GPTOverAPIApp {
     private currentChatMessages: Message[] = [];
     private tfidfIndex: ChatTfidfIndex = new ChatTfidfIndex();
     private contextPreviewDebounceTimer: number | null = null;
+    private manualContextOverrides: Map<string, boolean> = new Map(); // messageId -> inContext
 
     constructor() {
         const chatContainer = document.getElementById('chat-container');
@@ -92,6 +93,20 @@ class GPTOverAPIApp {
                 this.startNewChat();
             });
         }
+        document.addEventListener('messageContextToggle', (e) => {
+            const event = e as CustomEvent;
+            const detail = event.detail;
+
+            if (detail.manualOverride) {
+                this.manualContextOverrides.set(detail.messageId, detail.inContext);
+
+                // Update context highlights immediately
+                const inputField = document.getElementById('user-input') as HTMLInputElement;
+                if (inputField) {
+                    this.updateContextHighlights(inputField.value.trim());
+                }
+            }
+        });
     }
 
     private updateContextHighlights(query: string): void {
@@ -101,39 +116,83 @@ class GPTOverAPIApp {
 
         this.contextPreviewDebounceTimer = window.setTimeout(() => {
             this.contextPreviewDebounceTimer = null;
-
             const contextMsgs = this.getContextMessages(query, this.currentChatMessages);
             const contextIds = new Set(contextMsgs.map(m => m.id));
 
-            document.querySelectorAll('.msg-checkbox').forEach(cb => {
-                const checkbox = cb as HTMLInputElement;
-                const id = checkbox.dataset.messageId;
-                if (id) {
-                    checkbox.checked = contextIds.has(id);
+            // Update visual state of all messages
+            document.querySelectorAll('.msg').forEach(msgEl => {
+                const messageId = (msgEl as HTMLElement).dataset.messageId;
+                if (messageId) {
+                    const inContext = contextIds.has(messageId);
+                    msgEl.classList.toggle('in-context', inContext);
+
+                    // Update context indicator text
+                    const indicator = msgEl.querySelector('.context-indicator');
+                    if (indicator) {
+                        indicator.textContent = inContext ? 'in context' : '';
+                    }
                 }
             });
-        }, 300);
+        }, 150); // Reduced debounce time for more responsive UI
     }
 
     private getContextMessages(query: string, allMessages: Message[]): Message[] {
         const N = appConfig.get(5, 'llm.context.lastMessages');
         const K = appConfig.get(3, 'llm.context.ragMessages');
 
+        // Always include the last N messages
         const lastN = allMessages.slice(-N);
-        const earlier = allMessages.slice(0, -N);
-        const relevantIds = new Set<string>();
+        const lastNIds = new Set(lastN.map(m => m.id));
 
-        // Добавляем последние N сообщений
-        lastN.forEach(msg => relevantIds.add(msg.id));
+        // Get relevant messages based on query
+        const rawRelevant = this.tfidfIndex.findRelevant(query, N + K);
 
-        // Если есть запрос и сообщения в истории, добавляем K релевантных
-        if (K > 0 && query.trim() && earlier.length > 0) {
-            const relevantMessageIds = this.tfidfIndex.findRelevant(query, K);
-            relevantMessageIds.forEach(id => relevantIds.add(id));
-        }
+        // Filter out duplicates from lastN and take only K messages
+        const trulyRelevant = rawRelevant
+            .filter(msg => !lastNIds.has(msg.id))
+            .slice(0, K);
 
-        // Собираем контекст в хронологическом порядке
-        return allMessages.filter(msg => relevantIds.has(msg.id));
+        // Base context with chronologically sorted messages
+        let contextMessages = [
+            ...trulyRelevant,
+            ...lastN
+        ].sort((a, b) =>
+            allMessages.findIndex(m => m.id === a.id) -
+            allMessages.findIndex(m => m.id === b.id)
+        );
+
+        // Apply manual overrides from user interactions
+        contextMessages = this.applyManualContextOverrides(contextMessages, allMessages);
+
+        return contextMessages;
+    }
+
+    private applyManualContextOverrides(baseContext: Message[], allMessages: Message[]): Message[] {
+        const result = [...baseContext];
+        const contextIds = new Set(result.map(m => m.id));
+
+        // Process manual overrides
+        this.manualContextOverrides.forEach((inContext, messageId) => {
+            const messageIndex = result.findIndex(m => m.id === messageId);
+
+            // If message is in base context but user excluded it
+            if (messageIndex !== -1 && !inContext) {
+                result.splice(messageIndex, 1);
+            }
+            // If message is not in base context but user included it
+            else if (messageIndex === -1 && inContext) {
+                const messageToAdd = allMessages.find(m => m.id === messageId);
+                if (messageToAdd) {
+                    result.push(messageToAdd);
+                }
+            }
+        });
+
+        // Sort chronologically for better LLM understanding
+        return result.sort((a, b) =>
+            allMessages.findIndex(m => m.id === a.id) -
+            allMessages.findIndex(m => m.id === b.id)
+        );
     }
 
     private async handleSendMessage(): Promise<void> {
@@ -172,16 +231,16 @@ class GPTOverAPIApp {
             const apiMessages = contextMessages;
 
             // Создаем виджет с загрузкой для ответа ассистента
-            const assistMessageId = this.generateId();
-            const assistWidget = new MessageWidget('', assistMessageId); // Empty content to show loading
-            this.chatPanel.addMessageWidget(assistWidget.getElement(), 'assistant');
+            const assistantMessageId = this.generateId();
+            const assistantWidget = new MessageWidget('', assistantMessageId); // Empty content to show loading
+            this.chatPanel.addMessageWidget(assistantWidget.getElement(), 'assistant');
 
             // Получаем ответ
             const response = await this.llmClient.call(apiMessages, this.abortController.signal);
 
             if (response === 'API_KEY_NOT_CONFIGURED') {
                 // Обновляем виджет с сообщением об ошибке
-                assistWidget.updateContent(appConfig.getText('messages.apiKeyNotConfigured', 'Please configure your LLM settings first.'));
+                assistantWidget.updateContent(appConfig.getText('messages.apiKeyNotConfigured', 'Please configure your LLM settings first.'));
                 this.configView.show();
                 // Удаляем только что добавленное сообщение из контекста
                 this.currentChatMessages.pop();
@@ -189,21 +248,21 @@ class GPTOverAPIApp {
             }
 
             // Обновляем виджет с ответом
-            assistWidget.updateContent(response);
+            assistantWidget.updateContent(response);
 
             // Добавляем ответ ассистента в контекст
-            const assistMessage = {
-                id: assistMessageId,
+            const assistantMessage = {
+                id: assistantMessageId,
                 role: 'assistant' as const,
                 content: response
             };
 
-            this.currentChatMessages.push(assistMessage);
+            this.currentChatMessages.push(assistantMessage);
 
             // Сохраняем в историю чата
             if (this.currentChatId) {
                 this.saveMessageToChat(userMessage);
-                this.saveMessageToChat(assistMessage);
+                this.saveMessageToChat(assistantMessage);
             }
 
             // Сброс галочек после отправки
@@ -232,8 +291,9 @@ class GPTOverAPIApp {
     private startNewChat(): void {
         this.chatPanel.clear();
         this.currentChatMessages = [];
+        this.manualContextOverrides.clear(); // Reset context overrides
 
-        // Добавляем приветственное сообщение
+        // Add welcome message
         const welcomeId = this.generateId();
         const welcomeMessage = {
             id: welcomeId,
@@ -242,16 +302,17 @@ class GPTOverAPIApp {
         };
 
         const welcomeWidget = new MessageWidget(welcomeMessage.content, welcomeId);
+        welcomeWidget.setInContext(true); // Welcome message is always in context
         this.chatPanel.addMessageWidget(welcomeWidget.getElement(), 'assistant');
-
         this.currentChatMessages.push(welcomeMessage);
 
-        // Создаем новый чат
+        // Create new chat
         const newChatId = this.addChatToHistory(appConfig.getText('app.newChatTitle', 'New Chat'));
         this.currentChatId = newChatId;
 
-        // Обновляем индекс
+        // Build index
         this.tfidfIndex.buildIndex(this.currentChatMessages);
+        this.saveChatState();
     }
 
     private loadInitialChat(): void {
@@ -272,6 +333,9 @@ class GPTOverAPIApp {
 
     private loadChat(chatId: string): void {
         try {
+            this.currentChatId = chatId;
+
+            // Load messages
             const chatData = localStorage.getItem(`gptOverApiChat_${chatId}`);
             if (chatData) {
                 const messages = JSON.parse(chatData).map((msg: any) => ({
@@ -282,39 +346,52 @@ class GPTOverAPIApp {
                 this.chatPanel.clear();
                 this.currentChatMessages = [];
 
-                // Добавляем сообщения через виджеты
+                // Create widgets for messages
                 messages.forEach((msg: Message) => {
-                    // Convert 'assist' role to 'assistant' for display
                     const displayRole = (msg.role as string) === 'assist' ? 'assistant' : msg.role;
                     const widget = new MessageWidget(msg.content, msg.id);
                     this.chatPanel.addMessageWidget(widget.getElement(), displayRole);
-                    // Update the message role to 'assistant' if it was 'assist'
+
+                    // Fix old message roles
                     if ((msg.role as string) === 'assist') {
                         (msg as any).role = 'assistant';
                     }
+
                     this.currentChatMessages.push(msg);
                 });
 
-                // Восстанавливаем или строим индекс
+                // Load manual context overrides
+                this.manualContextOverrides.clear();
+                const overridesData = localStorage.getItem(`gptOverApiChatContextOverrides_${chatId}`);
+                if (overridesData) {
+                    const overrides = JSON.parse(overridesData);
+                    Object.entries(overrides).forEach(([messageId, inContext]) => {
+                        this.manualContextOverrides.set(messageId, inContext as boolean);
+                    });
+                }
+
+                // Restore or rebuild TF-IDF index
                 const cachedIndex = localStorage.getItem(`gptOverApiChatIndex_${chatId}`);
                 if (cachedIndex && this.tfidfIndex.deserialize(cachedIndex, this.currentChatMessages)) {
                     console.log('TF-IDF index restored from cache');
                 } else {
                     this.tfidfIndex.buildIndex(this.currentChatMessages);
-                    if (this.currentChatId) {
-                        localStorage.setItem(`gptOverApiChatIndex_${this.currentChatId}`, this.tfidfIndex.serialize());
-                    }
+                }
+
+                // Update context highlights
+                const inputField = document.getElementById('user-input') as HTMLInputElement;
+                if (inputField) {
+                    this.updateContextHighlights(inputField.value.trim());
                 }
             } else {
                 this.startNewChat();
             }
-
-            this.currentChatId = chatId;
         } catch (e) {
             console.error('Error loading chat:', e);
             this.startNewChat();
         }
     }
+
 
     private saveMessageToChat(message: Message): void {
         if (!this.currentChatId) return;
@@ -329,16 +406,43 @@ class GPTOverAPIApp {
             messages.push(message);
             localStorage.setItem(`gptOverApiChat_${this.currentChatId}`, JSON.stringify(messages));
 
-            // Обновляем название чата для первого сообщения пользователя
+            // Update chat title for first user message
             if (messages.length === 2 && message.role === 'user') {
                 const title = message.content.substring(0, 30) + (message.content.length > 30 ? '...' : '');
                 this.updateChatTitle(this.currentChatId, title);
             }
 
-            // Обновляем индекс и кэш
+            // Update index
             this.updateTfidfIndex();
         } catch (e) {
             console.error('Error saving message to chat:', e);
+        }
+    }
+
+    private saveChatState(): void {
+        if (!this.currentChatId) return;
+
+        try {
+            // Save messages
+            localStorage.setItem(
+                `gptOverApiChat_${this.currentChatId}`,
+                JSON.stringify(this.currentChatMessages)
+            );
+
+            // Save context overrides
+            const overrides = Object.fromEntries(this.manualContextOverrides);
+            localStorage.setItem(
+                `gptOverApiChatContextOverrides_${this.currentChatId}`,
+                JSON.stringify(overrides)
+            );
+
+            // Save TF-IDF index
+            localStorage.setItem(
+                `gptOverApiChatIndex_${this.currentChatId}`,
+                this.tfidfIndex.serialize()
+            );
+        } catch (e) {
+            console.error('Error saving chat state:', e);
         }
     }
 

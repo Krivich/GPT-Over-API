@@ -99,6 +99,11 @@ class AppConfig implements IAppConfig {
         });
 
         this.patchHtmlByMarkers();
+
+        // Dispatch a language change event
+        document.dispatchEvent(new CustomEvent('languageChanged', {
+            detail: { newLanguage: language }
+        }));
     }
 
     getCurrentLanguage(): string {

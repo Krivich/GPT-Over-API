@@ -1,12 +1,11 @@
 // src/types.ts
-
 export interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
     metadata?: {
-        tfidfTokens?: string[]; // или просто boolean "indexable"
-        indexedAt?: number;      // timestamp индексации
+        tfidfTokens?: string[];
+        indexedAt?: number;
     };
 }
 

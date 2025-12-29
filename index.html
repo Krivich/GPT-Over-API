@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-config-key="ui.[lang].seo.title">GPT Over API</title>
     <style>
-        /* === GPT-Over-API UI — чистая версия с белым фоном === */
+        /* === GPT-Over-API UI — обновленная версия с интерактивным контекстом === */
         :root {
             /* --- Дизайн-токены --- */
             --ha-space-1: 4px;
@@ -25,8 +25,7 @@
             --ha-radius-full: 50%;
             --ha-btn-size: 40px;
             --ha-panel-width: 360px;
-
-            /* --- Переработанная тауп-палитра с чистым белым фоном --- */
+            /* --- Цветовая схема --- */
             --ha-color-bg: #fdfdfd;                /* почти белый, но с теплым оттенком */
             --ha-color-surface: #ffffff;           /* абсолютно белые виджеты */
             --ha-color-bg-elevated: #fafafa;       /* для возвышенных элементов */
@@ -36,23 +35,24 @@
             --ha-color-text-secondary: #7a7267;    /* тауп для второстепенного текста */
             --ha-color-text-placeholder: #a8a095;
             --ha-color-border: #e5e3e0;            /* тонкий тауп-серый для границ */
-
             /* Акцентные цвета (тауп) */
             --ha-color-primary: #7a7267;
             --ha-color-primary-hover: #6a6358;
             --ha-color-primary-shadow: rgba(122, 114, 103, 0.15);
-
             /* Фоны сообщений */
             --ha-color-user-bg: #f9f8f6;
             --ha-color-coach-bg: #fbfbfa;
             --ha-color-coach-border: #d8d3c9;
-
+            /* Цвета для контекста */
+            --ha-color-context-user: #f5f4f0;
+            --ha-color-context-assistant: #f8f7f5;
+            --ha-color-context-border: #7a7267;
             /* Тени — объёмные, но без смещения */
             --ha-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             --ha-shadow-hover: 0 6px 18px rgba(122, 114, 103, 0.1);
             --ha-shadow-message: 0 2px 6px rgba(0, 0, 0, 0.02);
+            --ha-shadow-context: 0 2px 8px rgba(122, 114, 103, 0.15);
         }
-
         body {
             margin: 0;
             padding: 0;
@@ -60,13 +60,12 @@
             font-feature-settings: "liga", "kern";
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background-color: var(--ha-color-bg);  /* чистый теплый белый фон */
+            background-color: var(--ha-color-bg);
             color: var(--ha-color-text);
             height: 100vh;
             display: flex;
             overflow: hidden;
         }
-
         /* Main chat area */
         #main-chat-area {
             width: 100%;
@@ -75,7 +74,6 @@
             height: 100vh;
             position: relative;
         }
-
         .chat-header {
             padding: var(--ha-space-4);
             border-bottom: 1px solid var(--ha-color-border);
@@ -85,12 +83,10 @@
             justify-content: space-between;
             box-shadow: 0 1px 2px rgba(0,0,0,0.01);
         }
-
         .header-buttons {
             display: flex;
             gap: var(--ha-space-2);
         }
-
         .header-btn {
             background-color: var(--ha-color-bg-elevated);
             border: 1px solid var(--ha-color-border);
@@ -107,7 +103,6 @@
             position: relative;
             overflow: hidden;
         }
-
         .header-btn:hover {
             background: var(--ha-color-primary);
             color: white;
@@ -115,17 +110,14 @@
             box-shadow: 0 3px 8px var(--ha-color-primary-shadow);
             transform: scale(1.03);
         }
-
         .header-btn:active {
             transform: scale(0.98);
         }
-
         .header-title-with-settings {
             display: flex;
             align-items: center;
             gap: var(--ha-space-2);
         }
-
         .header-title-with-settings h1 {
             margin: 0;
             font-size: 1.3rem;
@@ -133,7 +125,6 @@
             font-weight: 600;
             letter-spacing: -0.02em;
         }
-
         .header-title-with-settings .header-btn,
         .header-buttons .header-btn {
             display: flex;
@@ -143,12 +134,10 @@
             width: auto;
             white-space: nowrap;
         }
-
         .model-name {
             font-size: 0.9rem;
             font-weight: 500;
         }
-
         .header-btn::after {
             content: '';
             position: absolute;
@@ -162,11 +151,9 @@
             transform: scale(1,1) translate(-50%);
             transform-origin: 50% 50%;
         }
-
         .header-btn:active::after {
             animation: ripple 0.4s linear;
         }
-
         .header-btn svg.icon {
             width: 20px;
             height: 20px;
@@ -175,7 +162,6 @@
             fill: none;
             transition: stroke 0.2s ease;
         }
-
         .chat-header h1 {
             margin: 0;
             font-size: 1.3rem;
@@ -183,17 +169,14 @@
             letter-spacing: -0.02em;
             color: var(--ha-color-text-primary);
         }
-
         .chat-container {
             flex: 1;
             overflow-y: auto;
             padding: var(--ha-space-4);
             display: flex;
             flex-direction: column;
-            /* Убрали градиент фона — теперь просто чистый цвет */
             background-color: var(--ha-color-bg);
         }
-
         /* Messages */
         .msg {
             padding: var(--ha-space-4) var(--ha-space-5);
@@ -207,91 +190,128 @@
             border-radius: var(--ha-radius-md);
             position: relative;
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            /* Ключевое исправление: карточки не двигаются, только тени */
-            transform: none !important;
-            will-change: box-shadow;
+            will-change: box-shadow, background-color;
             display: flex;
             gap: var(--ha-space-3);
             align-items: flex-start;
+            cursor: pointer;
         }
-
+        .msg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .msg:hover::after {
+            opacity: 1;
+            background: rgba(122, 114, 103, 0.05);
+        }
         .msg:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             z-index: 10;
-            /* Никакого смещения — только глубина через тень */
-            transform: none !important;
         }
-
         .msg.user {
             align-self: flex-end;
             background-color: var(--ha-color-user-bg);
             border-radius: var(--ha-radius-md) 0 var(--ha-radius-md) var(--ha-radius-md);
-            border-right: 3px solid var(--ha-color-primary);
             margin-left: auto;
         }
-
-        .msg.assist {
+        .msg.assistant {
             align-self: flex-start;
             background-color: var(--ha-color-coach-bg);
             border-radius: 0 var(--ha-radius-md) var(--ha-radius-md) var(--ha-radius-md);
-            border-left: 3px solid var(--ha-color-coach-border);
         }
-
-        /* Checkbox styles */
-        .msg-checkbox-container {
-            display: flex;
-            flex-shrink: 0;
-            margin-top: 4px; /* Для выравнивания с контентом */
+        /* Context styles */
+        .msg.in-context {
+            box-shadow: var(--ha-shadow-context);
+            border: 1px solid var(--ha-color-context-border);
         }
-
-        .msg-checkbox {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--ha-color-primary);
-            cursor: default;
+        .msg.in-context::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--ha-color-context-border);
+            border-radius: var(--ha-radius-sm) 0 0 var(--ha-radius-sm);
         }
-
+        .msg.in-context.user::before {
+            left: auto;
+            right: 0;
+        }
+        .msg.in-context.user {
+            background-color: var(--ha-color-context-user);
+        }
+        .msg.in-context.assistant {
+            background-color: var(--ha-color-context-assistant);
+        }
+        /* Context indicator */
+        .context-indicator {
+            position: absolute;
+            bottom: var(--ha-space-2);
+            right: var(--ha-space-2);
+            font-size: 0.7rem;
+            color: var(--ha-color-text-secondary);
+            opacity: 0;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .msg.in-context .context-indicator {
+            opacity: 1;
+            color: var(--ha-color-context-border);
+        }
+        .msg:hover .context-indicator {
+            opacity: 1;
+        }
+        .msg.in-context:hover .context-indicator::after {
+            content: ' (tap to remove)';
+        }
+        .msg:not(.in-context):hover .context-indicator::after {
+            content: ' (tap to include)';
+        }
         /* Message content wrapper */
         .message-content-wrapper {
             flex: 1;
-            min-width: 0; /* Для правильного обрезания длинных слов */
+            min-width: 0;
         }
-
         /* Typography for markdown content */
-        .msg.assist .message-content {
+        .msg.assistant .message-content {
             line-height: 1.6;
             font-size: 15px;
         }
-
-        .msg.assist .message-content p {
+        .msg.assistant .message-content p {
             margin: 0 0 var(--ha-space-3) 0;
         }
-
-        .msg.assist .message-content h1,
-        .msg.assist .message-content h2,
-        .msg.assist .message-content h3 {
+        .msg.assistant .message-content h1,
+        .msg.assistant .message-content h2,
+        .msg.assistant .message-content h3 {
             font-weight: 600;
             margin-top: var(--ha-space-5);
             margin-bottom: var(--ha-space-3);
             color: var(--ha-color-text-primary);
         }
-
-        .msg.assist .message-content strong {
+        .msg.assistant .message-content strong {
             font-weight: 600;
             color: var(--ha-color-text);
         }
-
-        .msg.assist .message-content ul {
+        .msg.assistant .message-content ul {
             padding-left: var(--ha-space-5);
             margin: var(--ha-space-3) 0;
         }
-
-        .msg.assist .message-content li {
+        .msg.assistant .message-content li {
             margin-bottom: var(--ha-space-2);
         }
-
-        /* Code blocks - ИСПРАВЛЕНО: убраны линии */
-        .msg.assist .message-content code {
+        /* Code blocks */
+        .msg.assistant .message-content code {
             background: #f8f6f3;
             padding: 2px 6px;
             border-radius: 4px;
@@ -299,8 +319,7 @@
             font-size: 13px;
             display: inline-block;
         }
-
-        .msg.assist .message-content pre {
+        .msg.assistant .message-content pre {
             background: #f8f6f3;
             padding: var(--ha-space-3);
             border-radius: var(--ha-radius-md);
@@ -310,7 +329,6 @@
             line-height: 1.45;
             box-shadow: none !important;
         }
-
         /* Input area */
         .input-area {
             padding: var(--ha-space-4) var(--ha-space-4) var(--ha-space-4) var(--ha-space-4);
@@ -319,7 +337,6 @@
             display: flex;
             gap: var(--ha-space-2);
         }
-
         #user-input {
             flex: 1;
             padding: var(--ha-space-3);
@@ -331,13 +348,11 @@
             font-size: 1rem;
             transition: all 0.2s ease;
         }
-
         #user-input:focus {
             outline: none;
             border-color: var(--ha-color-primary);
             box-shadow: 0 0 0 3px rgba(122, 114, 103, 0.1);
         }
-
         #send-btn {
             padding: var(--ha-space-3) var(--ha-space-4);
             background: linear-gradient(135deg, var(--ha-color-primary), var(--ha-color-primary-hover));
@@ -353,17 +368,14 @@
             box-shadow: 0 3px 8px var(--ha-color-primary-shadow);
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-
         #send-btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px var(--ha-color-primary-shadow);
         }
-
         #send-btn:active {
             transform: translateY(1px);
             box-shadow: 0 2px 5px var(--ha-color-primary-shadow);
         }
-
         #send-btn::after {
             content: '';
             position: absolute;
@@ -377,37 +389,30 @@
             transform: scale(1,1) translate(-50%);
             transform-origin: 50% 50%;
         }
-
         #send-btn:active::after {
             animation: ripple 0.4s linear;
         }
-
         #send-btn:disabled {
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-
         /* Widget styles */
         .ha-widget {
-            background-color: var(--ha-color-surface); /* Абсолютно белые виджеты */
+            background-color: var(--ha-color-surface);
             border-radius: var(--ha-radius-lg);
             padding: var(--ha-space-4);
             margin-bottom: var(--ha-space-4);
             box-shadow: var(--ha-shadow);
             border: 1px solid var(--ha-color-border);
             transition: all 0.2s ease;
-            /* Никакого движения при наведении */
             transform: none !important;
         }
-
         .ha-widget:hover {
             box-shadow: var(--ha-shadow-hover);
-            /* Только тень, без смещения */
             transform: none !important;
         }
-
         .ha-widget-header {
             font-weight: 600;
             margin-bottom: var(--ha-space-3);
@@ -418,12 +423,10 @@
             align-items: center;
             color: var(--ha-color-text-primary);
         }
-
         .ha-widget-header svg.icon {
             margin-right: var(--ha-space-2);
             stroke: var(--ha-color-text-secondary);
         }
-
         .ha-btn svg.icon {
             margin-right: var(--ha-space-2);
             vertical-align: middle;
@@ -431,19 +434,16 @@
             stroke-width: 1.8;
             fill: none;
         }
-
         #send-btn svg.icon {
             vertical-align: middle;
             stroke: currentColor;
             stroke-width: 1.8;
             fill: none;
         }
-
         .ha-input-group {
             position: relative;
             margin-bottom: var(--ha-space-5);
         }
-
         .ha-input {
             width: 100%;
             padding: var(--ha-space-3);
@@ -457,12 +457,10 @@
             box-sizing: border-box;
             transition: border-color 0.2s ease;
         }
-
         .ha-input:focus {
             border-color: var(--ha-color-primary);
             box-shadow: 0 0 0 3px rgba(122, 114, 103, 0.1);
         }
-
         .ha-input-label {
             position: absolute;
             top: var(--ha-space-3);
@@ -477,7 +475,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .ha-input:focus + .ha-input-label,
         .ha-input:not(:focus):not(:placeholder-shown) + .ha-input-label {
             top: calc(-0.5 * var(--ha-space-3) - 1px);
@@ -494,11 +491,9 @@
             border-radius: var(--ha-radius-xs);
             color: var(--ha-color-text-secondary);
         }
-
         .ha-input:focus + .ha-input-label {
             color: var(--ha-color-primary);
         }
-
         .ha-btn {
             padding: var(--ha-space-3);
             border: none;
@@ -510,15 +505,12 @@
             overflow: hidden;
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-
         .ha-btn:hover {
             transform: translateY(-1px);
         }
-
         .ha-btn:active {
             transform: translateY(1px);
         }
-
         .ha-btn::after {
             content: '';
             position: absolute;
@@ -532,32 +524,26 @@
             transform: scale(1,1) translate(-50%);
             transform-origin: 50% 50%;
         }
-
         .ha-btn:active::after {
             animation: ripple 0.4s linear;
         }
-
         .ha-btn--primary {
             background: linear-gradient(135deg, var(--ha-color-primary), var(--ha-color-primary-hover));
             color: white;
             box-shadow: 0 3px 8px var(--ha-color-primary-shadow);
         }
-
         .ha-btn--primary:hover {
             box-shadow: 0 4px 12px var(--ha-color-primary-shadow);
         }
-
         .ha-btn--primary:active {
             box-shadow: 0 2px 5px var(--ha-color-primary-shadow);
         }
-
         .ha-hint {
             font-size: 0.85rem;
             color: var(--ha-color-text-secondary);
             margin: var(--ha-space-2) 0 0 0;
             line-height: 1.5;
         }
-
         .loading {
             display: inline-block;
             width: 20px;
@@ -567,7 +553,6 @@
             border-top-color: var(--ha-color-primary);
             animation: spin 1s ease-in-out infinite;
         }
-
         svg.icon {
             width: 20px;
             height: 20px;
@@ -579,15 +564,12 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
         .icon-spin {
             animation: spin 1.5s linear infinite;
         }
-
         @keyframes ripple {
             0% {
                 transform: scale(0,0);
@@ -598,7 +580,6 @@
                 opacity: 0;
             }
         }
-
         /* Chat history items styling */
         .chat-history-item {
             padding: var(--ha-space-3);
@@ -609,145 +590,138 @@
             border: 1px solid transparent;
             user-select: none;
         }
-
         .chat-history-item:hover {
             background-color: var(--ha-color-bg-elevated);
             border-color: var(--ha-color-border);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-
         .chat-history-item:active {
             background-color: var(--ha-color-user-bg);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
-
         .chat-history-item {
             color: var(--ha-color-text);
         }
-
         .chat-history-list {
             max-height: 300px;
             overflow-y: auto;
             margin-bottom: var(--ha-space-4);
-            padding-right: 2px; /* Prevent right border from being clipped */
+            padding-right: 2px;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- SVG Sprite -->
-    <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
-        <symbol id="icon-send" viewBox="0 0 24 24">
-            <title>Send</title>
-            <polygon points="21.368 12.001 3 21.609 3 14 11 12 3 9.794 3 2.394" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-        <symbol id="icon-settings" viewBox="0 0 24 24">
-            <title>Settings</title>
-            <path d="M5.03506429,12.7050339 C5.01187484,12.4731696 5,12.2379716 5,12 C5,11.7620284 5.01187484,11.5268304 5.03506429,11.2949661 L3.20577137,9.23205081 L5.20577137,5.76794919 L7.9069713,6.32070904 C8.28729123,6.0461342 8.69629298,5.80882212 9.12862533,5.61412402 L10,3 L14,3 L14.8713747,5.61412402 C15.303707,5.80882212 15.7127088,6.0461342 16.0930287,6.32070904 L18.7942286,5.76794919 L20.7942286,9.23205081 L18.9649357,11.2949661 C18.9881252,11.5268304 19,11.7620284 19,12 C19,12.2379716 18.9881252,12.4731696 18.9649357,12.7050339 L20.7942286,14.7679492 L18.7942286,18.2320508 L16.0930287,17.679291 C15.7127088,17.9538658 15.303707,18.1911779 14.8713747,18.385876 L14,21 L10,21 L9.12862533,18.385876 C8.69629298,18.1911779 8.28729123,17.9538658 7.9069713,17.679291 L5.20577137,18.2320508 L3.20577137,14.7679492 L5.03506429,12.7050339 Z"/>
-            <circle cx="12" cy="12" r="1"/>
-        </symbol>
-        <symbol id="icon-history" viewBox="0 0 24 24">
-            <title>History</title>
-            <polyline points="1 12 3 14 5 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <polyline points="12 7 12 12 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12,21 C16.9705627,21 21,16.9705627 21,12 C21,7.02943725 16.9705627,3 12,3 C7.02943725,3 3,7.02943725 3,12 C3,11.975305 3,12.3086383 3,13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-        <symbol id="icon-plus" viewBox="0 0 24 24">
-            <title>Plus</title>
-            <path d="M20 12L4 12M12 4L12 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-        <symbol id="icon-save" viewBox="0 0 24 24">
-            <title>Save</title>
-            <path d="M17.2928932,3.29289322 L21,7 L21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 L16.5857864,3 C16.8510029,3 17.1053568,3.10535684 17.2928932,3.29289322 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect width="10" height="8" x="7" y="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect width="8" height="5" x="8" y="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-        <symbol id="icon-feather" viewBox="0 0 24 24">
-            <title>Feather</title>
-            <path d="M5.12634 17C5.04271 17.6571 5 18.325 5 19V21M5.12634 17C6.03384 9.86861 11.7594 4 20 4L19 8H16L17 10L15 12H11L13 14L12 16H8L5.12634 17Z"/>
-        </symbol>
-    </svg>
-    <!-- Main chat area -->
-    <div id="main-chat-area">
-        <div class="chat-header">
-            <div class="header-title-with-settings">
-                <h1 data-text-key="[lang].app.title">Чат</h1>
-                <button id="settings-btn" class="header-btn" title="Settings">
-                    <span class="model-name">Model</span>
-                    <svg class="icon"><use href="#icon-settings"></use></svg>
-                </button>
-            </div>
-            <div class="header-buttons">
-                <button id="chat-history-btn" class="header-btn" title="Chat History">
-                    <svg class="icon"><use href="#icon-history"></use></svg>
-                    <span data-text-key="[lang].app.chatHistoryTitle">Chat History</span>
-                </button>
-            </div>
+<!-- SVG Sprite -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+    <symbol id="icon-send" viewBox="0 0 24 24">
+        <title>Send</title>
+        <polygon points="21.368 12.001 3 21.609 3 14 11 12 3 9.794 3 2.394" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+        <title>Settings</title>
+        <path d="M5.03506429,12.7050339 C5.01187484,12.4731696 5,12.2379716 5,12 C5,11.7620284 5.01187484,11.5268304 5.03506429,11.2949661 L3.20577137,9.23205081 L5.20577137,5.76794919 L7.9069713,6.32070904 C8.28729123,6.0461342 8.69629298,5.80882212 9.12862533,5.61412402 L10,3 L14,3 L14.8713747,5.61412402 C15.303707,5.80882212 15.7127088,6.0461342 16.0930287,6.32070904 L18.7942286,5.76794919 L20.7942286,9.23205081 L18.9649357,11.2949661 C18.9881252,11.5268304 19,11.7620284 19,12 C19,12.2379716 18.9881252,12.4731696 18.9649357,12.7050339 L20.7942286,14.7679492 L18.7942286,18.2320508 L16.0930287,17.679291 C15.7127088,17.9538658 15.303707,18.1911779 14.8713747,18.385876 L14,21 L10,21 L9.12862533,18.385876 C8.69629298,18.1911779 8.28729123,17.9538658 7.9069713,17.679291 L5.20577137,18.2320508 L3.20577137,14.7679492 L5.03506429,12.7050339 Z"/>
+        <circle cx="12" cy="12" r="1"/>
+    </symbol>
+    <symbol id="icon-history" viewBox="0 0 24 24">
+        <title>History</title>
+        <polyline points="1 12 3 14 5 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="12 7 12 12 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12,21 C16.9705627,21 21,16.9705627 21,12 C21,7.02943725 16.9705627,3 12,3 C7.02943725,3 3,7.02943725 3,12 C3,11.975305 3,12.3086383 3,13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+        <title>Plus</title>
+        <path d="M20 12L4 12M12 4L12 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24">
+        <title>Save</title>
+        <path d="M17.2928932,3.29289322 L21,7 L21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 L16.5857864,3 C16.8510029,3 17.1053568,3.10535684 17.2928932,3.29289322 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="10" height="8" x="7" y="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="8" height="5" x="8" y="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-feather" viewBox="0 0 24 24">
+        <title>Feather</title>
+        <path d="M5.12634 17C5.04271 17.6571 5 18.325 5 19V21M5.12634 17C6.03384 9.86861 11.7594 4 20 4L19 8H16L17 10L15 12H11L13 14L12 16H8L5.12634 17Z"/>
+    </symbol>
+</svg>
+<!-- Main chat area -->
+<div id="main-chat-area">
+    <div class="chat-header">
+        <div class="header-title-with-settings">
+            <h1 data-text-key="[lang].app.title">Чат</h1>
+            <button id="settings-btn" class="header-btn" title="Settings">
+                <span class="model-name">Model</span>
+                <svg class="icon"><use href="#icon-settings"></use></svg>
+            </button>
         </div>
-        <div id="chat-container" class="chat-container">
-            <!-- Messages will appear here -->
-            <div class="msg assist" data-text-key="[lang].app.greeting">Hello! How can I help you today?</div>
-        </div>
-        <div class="input-area">
-            <input type="text" id="user-input" data-config-key="[lang].app.userInputPlaceholder" data-config-attr="placeholder" placeholder="Type your message..." />
-            <button id="send-btn" title="Send">
-                <svg class="icon"><use href="#icon-send"></use></svg>
+        <div class="header-buttons">
+            <button id="chat-history-btn" class="header-btn" title="Chat History">
+                <svg class="icon"><use href="#icon-history"></use></svg>
+                <span data-text-key="[lang].app.chatHistoryTitle">Chat History</span>
             </button>
         </div>
     </div>
-
-    <!-- Template for chat history widget -->
-    <template id="chat-history-widget-template">
-        <div class="ha-widget">
-            <div class="ha-widget-header">
-                <svg class="icon"><use href="#icon-history"></use></svg>
-                <span data-text-key="[lang].app.chatHistoryTitle">Chat History</span>
-            </div>
-            <div class="ha-input-group">
-                <input class="ha-input" type="text" id="chat-search-input" placeholder=" " data-config-key="[lang].texts.sidebar.searchPlaceholder" />
-                <label class="ha-input-label" data-text-key="[lang].texts.sidebar.searchPlaceholder">Search</label>
-            </div>
-            <div class="chat-history-list">
-                <!-- Chat history items will be added here dynamically -->
-            </div>
-            <button id="new-chat-btn" class="ha-btn ha-btn--primary ha-btn--full">
-                <svg class="icon"><use href="#icon-plus"></use></svg>
-                <span data-text-key="[lang].app.newChatButton">New Chat</span>
-            </button>
+    <div id="chat-container" class="chat-container">
+        <!-- Messages will appear here -->
+        <div class="msg assistant in-context" data-text-key="[lang].app.greeting">Hello! How can I help you today?</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" data-config-key="[lang].app.userInputPlaceholder" data-config-attr="placeholder" placeholder="Type your message..." />
+        <button id="send-btn" title="Send">
+            <svg class="icon"><use href="#icon-send"></use></svg>
+        </button>
+    </div>
+</div>
+<!-- Template for chat history widget -->
+<template id="chat-history-widget-template">
+    <div class="ha-widget">
+        <div class="ha-widget-header">
+            <svg class="icon"><use href="#icon-history"></use></svg>
+            <span data-text-key="[lang].app.chatHistoryTitle">Chat History</span>
         </div>
-    </template>
-
-    <!-- Template for config widget -->
-    <template id="config-widget-template">
-        <div class="ha-widget">
-            <div class="ha-widget-header">
-                <svg class="icon"><use href="#icon-settings"></use></svg>
-                <span data-text-key="[lang].settings.title">LLM Settings</span>
-            </div>
-            <div class="ha-input-group">
-                <input class="ha-input" type="text" name="apiEndpoint" placeholder=" " data-config-key="[lang].settings.defaultApiEndpoint" />
-                <label class="ha-input-label" data-text-key="[lang].settings.apiEndpointLabel">API Endpoint</label>
-            </div>
-            <div class="ha-input-group">
-                <input class="ha-input" type="password" name="apiKey" autocomplete="off" placeholder=" " />
-                <label class="ha-input-label" data-text-key="[lang].settings.apiKeyLabel">API Key</label>
-            </div>
-            <div class="ha-input-group">
-                <input class="ha-input" type="text" name="model" placeholder=" " data-config-key="[lang].settings.defaultModel" />
-                <label class="ha-input-label" data-text-key="[lang].settings.modelLabel">Model</label>
-            </div>
-            <button class="ha-btn ha-btn--primary ha-btn--full config-save-btn">
-                <svg class="icon"><use href="#icon-save"></use></svg>
-                <span data-text-key="[lang].settings.saveButton">Save</span>
-            </button>
-            <p class="ha-hint" data-text-key="[lang].settings.hint">Changes take effect immediately. API key is stored only in your browser.</p>
+        <div class="ha-input-group">
+            <input class="ha-input" type="text" id="chat-search-input" placeholder=" " data-config-key="[lang].texts.sidebar.searchPlaceholder" />
+            <label class="ha-input-label" data-text-key="[lang].texts.sidebar.searchPlaceholder">Search</label>
         </div>
-    </template>
-
-    <!-- Template for message widget -->
-    <template id="message-widget-template">
-        <div class="ha-widget msg">
-            <div class="msg-checkbox-container"></div>
+        <div class="chat-history-list">
+            <!-- Chat history items will be added here dynamically -->
+        </div>
+        <button id="new-chat-btn" class="ha-btn ha-btn--primary ha-btn--full">
+            <svg class="icon"><use href="#icon-plus"></use></svg>
+            <span data-text-key="[lang].app.newChatButton">New Chat</span>
+        </button>
+    </div>
+</template>
+<!-- Template for config widget -->
+<template id="config-widget-template">
+    <div class="ha-widget">
+        <div class="ha-widget-header">
+            <svg class="icon"><use href="#icon-settings"></use></svg>
+            <span data-text-key="[lang].settings.title">LLM Settings</span>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="text" name="apiEndpoint" placeholder=" " data-config-key="[lang].settings.defaultApiEndpoint" />
+            <label class="ha-input-label" data-text-key="[lang].settings.apiEndpointLabel">API Endpoint</label>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="password" name="apiKey" autocomplete="off" placeholder=" " />
+            <label class="ha-input-label" data-text-key="[lang].settings.apiKeyLabel">API Key</label>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="text" name="model" placeholder=" " data-config-key="[lang].settings.defaultModel" />
+            <label class="ha-input-label" data-text-key="[lang].settings.modelLabel">Model</label>
+        </div>
+        <button class="ha-btn ha-btn--primary ha-btn--full config-save-btn">
+            <svg class="icon"><use href="#icon-save"></use></svg>
+            <span data-text-key="[lang].settings.saveButton">Save</span>
+        </button>
+        <p class="ha-hint" data-text-key="[lang].settings.hint">Changes take effect immediately. API key is stored only in your browser.</p>
+    </div>
+</template>
+<!-- Template for message widget -->
+<template id="message-widget-template">
+    <div class="ha-widget msg">
+        <div class="message-content-wrapper">
             <div class="message-content" style="display: none;"></div>
             <div class="message-loading" style="display: none;">
                 <svg class="icon icon-spin" style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;">
@@ -756,64 +730,12 @@
                 <span>Thinking...</span>
             </div>
         </div>
-    </template>
-
-    <script>
+        <span class="context-indicator">in context</span>
+    </div>
+</template>
+<script>
 "use strict";
 (() => {
-  // src/utils/markdown.ts
-  function md(text) {
-    const lines = text.split("\n");
-    let result = "";
-    let inList = false;
-    let inCodeBlock = false;
-    const parseInline = (str) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/`(.*?)`/g, "<code>$1</code>").replace(/\*(.*?)\*/g, "<em>$1</em>");
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      if (line.trim().startsWith("```")) {
-        if (!inCodeBlock) {
-          const lang = line.trim().substring(3) || "text";
-          result += `<pre data-lang="${lang}"><code>`;
-          inCodeBlock = true;
-        } else {
-          result += "</code></pre>";
-          inCodeBlock = false;
-        }
-        continue;
-      }
-      if (inCodeBlock) {
-        result += line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "\n";
-        continue;
-      }
-      const listMatch = line.match(/^[-*+]\s+(.*)/);
-      if (listMatch) {
-        if (!inList) {
-          result += "<ul>";
-          inList = true;
-        }
-        result += `<li>${parseInline(listMatch[1])}</li>`;
-        continue;
-      } else if (inList) {
-        result += "</ul>";
-        inList = false;
-      }
-      const headerMatch = line.match(/^(#{1,3})\s+(.*)/);
-      if (headerMatch) {
-        const level = headerMatch[1].length;
-        result += `<h${level}>${parseInline(headerMatch[2])}</h${level}>`;
-        continue;
-      }
-      if (line.trim() === "") {
-        result += '<div class="spacer"></div>';
-      } else {
-        result += `<p>${parseInline(line)}</p>`;
-      }
-    }
-    if (inList) result += "</ul>";
-    if (inCodeBlock) result += "</code></pre>";
-    return result;
-  }
-
   // src/components/chat-panel.ts
   var ChatPanel = class {
     constructor(element) {
@@ -826,7 +748,7 @@
       const msg = document.createElement("div");
       msg.className = `msg ${role}`;
       if (role === "assistant") {
-        msg.innerHTML = md(text);
+        msg.textContent = text;
       } else {
         msg.textContent = text;
       }
@@ -899,6 +821,11 @@
             newChatTitle: "New Chat",
             searchPlaceholder: "Search chats...",
             noMatchingChats: "No matching chats"
+          },
+          context: {
+            inContext: "in context",
+            tapToRemove: "(tap to remove)",
+            tapToInclude: "(tap to include)"
           }
         }
       },
@@ -951,6 +878,11 @@
             newChatTitle: "\u041D\u043E\u0432\u044B\u0439 \u0447\u0430\u0442",
             searchPlaceholder: "\u041F\u043E\u0438\u0441\u043A \u0447\u0430\u0442\u043E\u0432...",
             noMatchingChats: "\u041D\u0435\u0442 \u043F\u043E\u0434\u0445\u043E\u0434\u044F\u0449\u0438\u0445 \u0447\u0430\u0442\u043E\u0432"
+          },
+          context: {
+            inContext: "\u0432 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u0435",
+            tapToRemove: "(\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u0443\u0431\u0440\u0430\u0442\u044C)",
+            tapToInclude: "(\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C)"
           }
         }
       }
@@ -1051,6 +983,9 @@
         ui: DEFAULTS.ui[language] || DEFAULTS.ui.en
       });
       this.patchHtmlByMarkers();
+      document.dispatchEvent(new CustomEvent("languageChanged", {
+        detail: { newLanguage: language }
+      }));
     }
     getCurrentLanguage() {
       return this._currentLanguage;
@@ -1208,8 +1143,8 @@
           model: this.config.model,
           messages: messages.map(({ id, metadata, ...apiMsg }) => ({
             ...apiMsg,
-            role: apiMsg.role === "assist" ? "assistant" : apiMsg.role
-            // Map 'assist' to 'assistant' for API
+            role: apiMsg.role
+            // Use the role as is
           })),
           // Exclude id and metadata when sending to API, and map roles
           temperature: 0.7,
@@ -1463,12 +1398,13 @@
       const texts = indexable.map((msg) => msg.content);
       this.index = new TfidfRagIndex(texts);
     }
+    // THESIS: Возвращаем Message[] вместо string[] для типобезопасности и сохранения метаданных
     findRelevant(query, topK) {
       if (!this.index || topK <= 0 || !query.trim()) {
         return [];
       }
       const results = this.index.search(query, topK);
-      return results.map((r) => this.positionToId[r.index]).filter(Boolean);
+      return results.map((r) => this.messageById.get(this.positionToId[r.index])).filter((msg) => !!msg);
     }
     serialize() {
       const data = {
@@ -1485,7 +1421,7 @@
         for (const msg of messages) {
           this.messageById.set(msg.id, msg);
         }
-        const indexable = this.positionToId.map((id) => this.messageById.get(id)).filter(Boolean);
+        const indexable = this.positionToId.map((id) => this.messageById.get(id)).filter((msg) => !!msg);
         if (indexable.length > 0) {
           const texts = indexable.map((msg) => msg.content);
           this.index = new TfidfRagIndex(texts);
@@ -1493,19 +1429,74 @@
         }
         return false;
       } catch (e) {
-        console.warn("Failed to deserialize TF-IDF index");
+        console.warn("Failed to deserialize TF-IDF index", e);
         return false;
       }
     }
   };
 
+  // src/utils/markdown.ts
+  function md(text) {
+    const lines = text.split("\n");
+    let result = "";
+    let inList = false;
+    let inCodeBlock = false;
+    const parseInline = (str) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/`(.*?)`/g, "<code>$1</code>").replace(/\*(.*?)\*/g, "<em>$1</em>");
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      if (line.trim().startsWith("```")) {
+        if (!inCodeBlock) {
+          const lang = line.trim().substring(3) || "text";
+          result += `<pre data-lang="${lang}"><code>`;
+          inCodeBlock = true;
+        } else {
+          result += "</code></pre>";
+          inCodeBlock = false;
+        }
+        continue;
+      }
+      if (inCodeBlock) {
+        result += line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "\n";
+        continue;
+      }
+      const listMatch = line.match(/^[-*+]\s+(.*)/);
+      if (listMatch) {
+        if (!inList) {
+          result += "<ul>";
+          inList = true;
+        }
+        result += `<li>${parseInline(listMatch[1])}</li>`;
+        continue;
+      } else if (inList) {
+        result += "</ul>";
+        inList = false;
+      }
+      const headerMatch = line.match(/^(#{1,3})\s+(.*)/);
+      if (headerMatch) {
+        const level = headerMatch[1].length;
+        result += `<h${level}>${parseInline(headerMatch[2])}</h${level}>`;
+        continue;
+      }
+      if (line.trim() === "") {
+        result += '<div class="spacer"></div>';
+      } else {
+        result += `<p>${parseInline(line)}</p>`;
+      }
+    }
+    if (inList) result += "</ul>";
+    if (inCodeBlock) result += "</code></pre>";
+    return result;
+  }
+
   // src/components/widgets/message-widget.ts
   var MessageWidget = class {
     element;
-    checkboxEl = null;
     contentEl = null;
     loadingEl = null;
+    contextIndicator;
     messageId;
+    inContext = false;
+    isProcessing = false;
     constructor(content = "", messageId) {
       const templateEl = document.getElementById("message-widget-template");
       if (!(templateEl instanceof HTMLTemplateElement)) {
@@ -1516,17 +1507,19 @@
       if (!this.element) throw new Error("Message widget root element missing");
       this.contentEl = this.element.querySelector(".message-content");
       this.loadingEl = this.element.querySelector(".message-loading");
-      const checkboxContainer = this.element.querySelector(".msg-checkbox-container");
+      this.contextIndicator = this.element.querySelector(".context-indicator");
       this.messageId = messageId || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-      if (checkboxContainer) {
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "msg-checkbox";
-        checkbox.disabled = true;
-        checkbox.dataset.messageId = this.messageId;
-        this.checkboxEl = checkbox;
-        checkboxContainer.appendChild(checkbox);
-      }
+      this.element.dataset.messageId = this.messageId;
+      this.element.addEventListener("click", (e) => {
+        if (e.target.closest("a, button, code, pre")) {
+          return;
+        }
+        if (this.isProcessing) {
+          return;
+        }
+        e.stopPropagation();
+        this.toggleInContext();
+      });
       if (content) {
         this.updateContent(content);
       } else {
@@ -1535,27 +1528,52 @@
     }
     updateContent(content) {
       if (this.contentEl && this.loadingEl) {
-        this.contentEl.innerHTML = content;
+        this.contentEl.innerHTML = md(content);
         this.contentEl.style.display = "block";
         this.loadingEl.style.display = "none";
+        this.isProcessing = false;
       }
     }
     showLoading() {
       if (this.contentEl && this.loadingEl) {
         this.contentEl.style.display = "none";
         this.loadingEl.style.display = "block";
+        this.isProcessing = true;
       }
     }
     getElement() {
       return this.element;
     }
     setInContext(inContext) {
-      if (this.checkboxEl) {
-        this.checkboxEl.checked = inContext;
+      this.inContext = inContext;
+      this.element.classList.toggle("in-context", inContext);
+      if (inContext) {
+        this.contextIndicator.textContent = "in context";
+      } else {
+        this.contextIndicator.textContent = "";
       }
+    }
+    toggleInContext() {
+      this.setInContext(!this.inContext);
+      const event = new CustomEvent("messageContextToggle", {
+        detail: {
+          messageId: this.messageId,
+          inContext: this.inContext,
+          manualOverride: true
+        },
+        bubbles: true,
+        cancelable: true
+      });
+      this.element.dispatchEvent(event);
+    }
+    isInContext() {
+      return this.inContext;
     }
     getContent() {
       return this.contentEl?.innerHTML || "";
+    }
+    getMessageId() {
+      return this.messageId;
     }
   };
 
@@ -1571,6 +1589,8 @@
     currentChatMessages = [];
     tfidfIndex = new ChatTfidfIndex();
     contextPreviewDebounceTimer = null;
+    manualContextOverrides = /* @__PURE__ */ new Map();
+    // messageId -> inContext
     constructor() {
       const chatContainer = document.getElementById("chat-container");
       if (!chatContainer) {
@@ -1633,6 +1653,17 @@
           this.startNewChat();
         });
       }
+      document.addEventListener("messageContextToggle", (e) => {
+        const event = e;
+        const detail = event.detail;
+        if (detail.manualOverride) {
+          this.manualContextOverrides.set(detail.messageId, detail.inContext);
+          const inputField2 = document.getElementById("user-input");
+          if (inputField2) {
+            this.updateContextHighlights(inputField2.value.trim());
+          }
+        }
+      });
     }
     updateContextHighlights(query) {
       if (this.contextPreviewDebounceTimer) {
@@ -1642,27 +1673,52 @@
         this.contextPreviewDebounceTimer = null;
         const contextMsgs = this.getContextMessages(query, this.currentChatMessages);
         const contextIds = new Set(contextMsgs.map((m) => m.id));
-        document.querySelectorAll(".msg-checkbox").forEach((cb) => {
-          const checkbox = cb;
-          const id = checkbox.dataset.messageId;
-          if (id) {
-            checkbox.checked = contextIds.has(id);
+        document.querySelectorAll(".msg").forEach((msgEl) => {
+          const messageId = msgEl.dataset.messageId;
+          if (messageId) {
+            const inContext = contextIds.has(messageId);
+            msgEl.classList.toggle("in-context", inContext);
+            const indicator = msgEl.querySelector(".context-indicator");
+            if (indicator) {
+              indicator.textContent = inContext ? "in context" : "";
+            }
           }
         });
-      }, 300);
+      }, 150);
     }
     getContextMessages(query, allMessages) {
       const N = appConfig.get(5, "llm.context.lastMessages");
       const K = appConfig.get(3, "llm.context.ragMessages");
       const lastN = allMessages.slice(-N);
-      const earlier = allMessages.slice(0, -N);
-      const relevantIds = /* @__PURE__ */ new Set();
-      lastN.forEach((msg) => relevantIds.add(msg.id));
-      if (K > 0 && query.trim() && earlier.length > 0) {
-        const relevantMessageIds = this.tfidfIndex.findRelevant(query, K);
-        relevantMessageIds.forEach((id) => relevantIds.add(id));
-      }
-      return allMessages.filter((msg) => relevantIds.has(msg.id));
+      const lastNIds = new Set(lastN.map((m) => m.id));
+      const rawRelevant = this.tfidfIndex.findRelevant(query, N + K);
+      const trulyRelevant = rawRelevant.filter((msg) => !lastNIds.has(msg.id)).slice(0, K);
+      let contextMessages = [
+        ...trulyRelevant,
+        ...lastN
+      ].sort(
+        (a, b) => allMessages.findIndex((m) => m.id === a.id) - allMessages.findIndex((m) => m.id === b.id)
+      );
+      contextMessages = this.applyManualContextOverrides(contextMessages, allMessages);
+      return contextMessages;
+    }
+    applyManualContextOverrides(baseContext, allMessages) {
+      const result = [...baseContext];
+      const contextIds = new Set(result.map((m) => m.id));
+      this.manualContextOverrides.forEach((inContext, messageId) => {
+        const messageIndex = result.findIndex((m) => m.id === messageId);
+        if (messageIndex !== -1 && !inContext) {
+          result.splice(messageIndex, 1);
+        } else if (messageIndex === -1 && inContext) {
+          const messageToAdd = allMessages.find((m) => m.id === messageId);
+          if (messageToAdd) {
+            result.push(messageToAdd);
+          }
+        }
+      });
+      return result.sort(
+        (a, b) => allMessages.findIndex((m) => m.id === a.id) - allMessages.findIndex((m) => m.id === b.id)
+      );
     }
     async handleSendMessage() {
       const inputField = document.getElementById("user-input");
@@ -1684,26 +1740,26 @@
         this.abortController = new AbortController();
         const contextMessages = this.getContextMessages(message, this.currentChatMessages);
         const apiMessages = contextMessages;
-        const assistMessageId = this.generateId();
-        const assistWidget = new MessageWidget("", assistMessageId);
-        this.chatPanel.addMessageWidget(assistWidget.getElement(), "assistant");
+        const assistantMessageId = this.generateId();
+        const assistantWidget = new MessageWidget("", assistantMessageId);
+        this.chatPanel.addMessageWidget(assistantWidget.getElement(), "assistant");
         const response = await this.llmClient.call(apiMessages, this.abortController.signal);
         if (response === "API_KEY_NOT_CONFIGURED") {
-          assistWidget.updateContent(appConfig.getText("messages.apiKeyNotConfigured", "Please configure your LLM settings first."));
+          assistantWidget.updateContent(appConfig.getText("messages.apiKeyNotConfigured", "Please configure your LLM settings first."));
           this.configView.show();
           this.currentChatMessages.pop();
           return;
         }
-        assistWidget.updateContent(response);
-        const assistMessage = {
-          id: assistMessageId,
+        assistantWidget.updateContent(response);
+        const assistantMessage = {
+          id: assistantMessageId,
           role: "assistant",
           content: response
         };
-        this.currentChatMessages.push(assistMessage);
+        this.currentChatMessages.push(assistantMessage);
         if (this.currentChatId) {
           this.saveMessageToChat(userMessage);
-          this.saveMessageToChat(assistMessage);
+          this.saveMessageToChat(assistantMessage);
         }
         this.clearContextHighlights();
       } catch (error) {
@@ -1727,6 +1783,7 @@
     startNewChat() {
       this.chatPanel.clear();
       this.currentChatMessages = [];
+      this.manualContextOverrides.clear();
       const welcomeId = this.generateId();
       const welcomeMessage = {
         id: welcomeId,
@@ -1734,11 +1791,13 @@
         content: appConfig.getText("app.greeting", "Hello! How can I help you today?")
       };
       const welcomeWidget = new MessageWidget(welcomeMessage.content, welcomeId);
+      welcomeWidget.setInContext(true);
       this.chatPanel.addMessageWidget(welcomeWidget.getElement(), "assistant");
       this.currentChatMessages.push(welcomeMessage);
       const newChatId = this.addChatToHistory(appConfig.getText("app.newChatTitle", "New Chat"));
       this.currentChatId = newChatId;
       this.tfidfIndex.buildIndex(this.currentChatMessages);
+      this.saveChatState();
     }
     loadInitialChat() {
       const storedHistory = localStorage.getItem("gptOverApiChatHistory");
@@ -1757,6 +1816,7 @@
     }
     loadChat(chatId) {
       try {
+        this.currentChatId = chatId;
         const chatData = localStorage.getItem(`gptOverApiChat_${chatId}`);
         if (chatData) {
           const messages = JSON.parse(chatData).map((msg) => ({
@@ -1774,19 +1834,27 @@
             }
             this.currentChatMessages.push(msg);
           });
+          this.manualContextOverrides.clear();
+          const overridesData = localStorage.getItem(`gptOverApiChatContextOverrides_${chatId}`);
+          if (overridesData) {
+            const overrides = JSON.parse(overridesData);
+            Object.entries(overrides).forEach(([messageId, inContext]) => {
+              this.manualContextOverrides.set(messageId, inContext);
+            });
+          }
           const cachedIndex = localStorage.getItem(`gptOverApiChatIndex_${chatId}`);
           if (cachedIndex && this.tfidfIndex.deserialize(cachedIndex, this.currentChatMessages)) {
             console.log("TF-IDF index restored from cache");
           } else {
             this.tfidfIndex.buildIndex(this.currentChatMessages);
-            if (this.currentChatId) {
-              localStorage.setItem(`gptOverApiChatIndex_${this.currentChatId}`, this.tfidfIndex.serialize());
-            }
+          }
+          const inputField = document.getElementById("user-input");
+          if (inputField) {
+            this.updateContextHighlights(inputField.value.trim());
           }
         } else {
           this.startNewChat();
         }
-        this.currentChatId = chatId;
       } catch (e) {
         console.error("Error loading chat:", e);
         this.startNewChat();
@@ -1809,6 +1877,26 @@
         this.updateTfidfIndex();
       } catch (e) {
         console.error("Error saving message to chat:", e);
+      }
+    }
+    saveChatState() {
+      if (!this.currentChatId) return;
+      try {
+        localStorage.setItem(
+          `gptOverApiChat_${this.currentChatId}`,
+          JSON.stringify(this.currentChatMessages)
+        );
+        const overrides = Object.fromEntries(this.manualContextOverrides);
+        localStorage.setItem(
+          `gptOverApiChatContextOverrides_${this.currentChatId}`,
+          JSON.stringify(overrides)
+        );
+        localStorage.setItem(
+          `gptOverApiChatIndex_${this.currentChatId}`,
+          this.tfidfIndex.serialize()
+        );
+      } catch (e) {
+        console.error("Error saving chat state:", e);
       }
     }
     updateTfidfIndex() {

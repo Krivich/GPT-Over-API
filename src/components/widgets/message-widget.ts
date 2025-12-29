@@ -1,10 +1,14 @@
 // src/components/widgets/message-widget.ts
+import { md } from '../../utils/markdown.js';
+
 export class MessageWidget {
     private element: HTMLElement;
-    private checkboxEl: HTMLInputElement | null = null;
     private contentEl: HTMLElement | null = null;
     private loadingEl: HTMLElement | null = null;
+    private contextIndicator: HTMLElement;
     public readonly messageId: string;
+    private inContext: boolean = false;
+    private isProcessing: boolean = false;
 
     constructor(content: string = '', messageId?: string) {
         const templateEl = document.getElementById('message-widget-template');
@@ -17,20 +21,29 @@ export class MessageWidget {
 
         this.contentEl = this.element.querySelector('.message-content');
         this.loadingEl = this.element.querySelector('.message-loading');
-        const checkboxContainer = this.element.querySelector('.msg-checkbox-container');
+        this.contextIndicator = this.element.querySelector('.context-indicator') as HTMLElement;
 
         // Generate a unique message ID if not provided
         this.messageId = messageId || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
-        if (checkboxContainer) {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'msg-checkbox';
-            checkbox.disabled = true; // Только для отображения, не для взаимодействия
-            checkbox.dataset.messageId = this.messageId;
-            this.checkboxEl = checkbox;
-            checkboxContainer.appendChild(checkbox);
-        }
+        // Set message ID as a data attribute for easy lookup
+        this.element.dataset.messageId = this.messageId;
+
+        // Add click handler for context toggling
+        this.element.addEventListener('click', (e) => {
+            // Ignore clicks on links and buttons inside the message
+            if ((e.target as HTMLElement).closest('a, button, code, pre')) {
+                return;
+            }
+
+            // Prevent handling clicks on the loading spinner
+            if (this.isProcessing) {
+                return;
+            }
+
+            e.stopPropagation();
+            this.toggleInContext();
+        });
 
         if (content) {
             this.updateContent(content);
@@ -41,9 +54,11 @@ export class MessageWidget {
 
     updateContent(content: string): void {
         if (this.contentEl && this.loadingEl) {
-            this.contentEl.innerHTML = content;
+            // Format the content using markdown before setting it
+            this.contentEl.innerHTML = md(content);
             this.contentEl.style.display = 'block';
             this.loadingEl.style.display = 'none';
+            this.isProcessing = false;
         }
     }
 
@@ -51,6 +66,7 @@ export class MessageWidget {
         if (this.contentEl && this.loadingEl) {
             this.contentEl.style.display = 'none';
             this.loadingEl.style.display = 'block';
+            this.isProcessing = true;
         }
     }
 
@@ -59,12 +75,41 @@ export class MessageWidget {
     }
 
     setInContext(inContext: boolean): void {
-        if (this.checkboxEl) {
-            this.checkboxEl.checked = inContext;
+        this.inContext = inContext;
+        this.element.classList.toggle('in-context', inContext);
+
+        // Update indicator text
+        if (inContext) {
+            this.contextIndicator.textContent = 'in context';
+        } else {
+            this.contextIndicator.textContent = '';
         }
+    }
+
+    toggleInContext(): void {
+        this.setInContext(!this.inContext);
+        // Dispatch custom event for the main app to handle
+        const event = new CustomEvent('messageContextToggle', {
+            detail: {
+                messageId: this.messageId,
+                inContext: this.inContext,
+                manualOverride: true
+            },
+            bubbles: true,
+            cancelable: true
+        });
+        this.element.dispatchEvent(event);
+    }
+
+    isInContext(): boolean {
+        return this.inContext;
     }
 
     getContent(): string {
         return this.contentEl?.innerHTML || '';
+    }
+
+    getMessageId(): string {
+        return this.messageId;
     }
 }

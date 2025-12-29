@@ -1,6 +1,5 @@
 // src/components/chat-panel.ts
 import { IChatPanel } from '../interfaces.js';
-import { md } from '../utils/markdown.js';
 
 export class ChatPanel implements IChatPanel {
     constructor(private readonly element: HTMLElement) {}
@@ -14,7 +13,7 @@ export class ChatPanel implements IChatPanel {
         msg.className = `msg ${role}`;
 
         if (role === 'assistant') {
-            msg.innerHTML = md(text);
+            msg.textContent = text;
         } else {
             msg.textContent = text;
         }

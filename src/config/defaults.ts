@@ -51,6 +51,11 @@ export const DEFAULTS = {
                     newChatTitle: 'New Chat',
                     searchPlaceholder: 'Search chats...',
                     noMatchingChats: 'No matching chats'
+                },
+                context: {
+                    inContext: 'in context',
+                    tapToRemove: '(tap to remove)',
+                    tapToInclude: '(tap to include)'
                 }
             }
         },
@@ -103,6 +108,11 @@ export const DEFAULTS = {
                     newChatTitle: 'Новый чат',
                     searchPlaceholder: 'Поиск чатов...',
                     noMatchingChats: 'Нет подходящих чатов'
+                },
+                context: {
+                    inContext: 'в контексте',
+                    tapToRemove: '(нажмите чтобы убрать)',
+                    tapToInclude: '(нажмите чтобы добавить)'
                 }
             }
         }

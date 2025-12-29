@@ -6,8 +6,8 @@ import { Terminable } from './types.js';
 // Interface for chat panel functionality
 export interface IChatPanel {
   clear(): void;
-  addMessage(text: string, role: 'user' | 'assist' | 'assistant'): void;
-  addMessageWidget(widget: HTMLElement, role: 'user' | 'assist' | 'assistant'): void;
+  addMessage(text: string, role: 'user' | 'assistant'): void;
+  addMessageWidget(widget: HTMLElement, role: 'user' | 'assistant'): void;
   getElement(): HTMLElement;
 }
 
@@ -32,6 +32,11 @@ export interface IAppConfig {
 export interface IWidget {
   show(): Terminable;
   getType(): string;
+}
+
+// Interface for markdown formatting
+export interface IMarkdownFormatter {
+  format(text: string): string;
 }
 
 // Interface for chat history management
