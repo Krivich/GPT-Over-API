@@ -77,13 +77,6 @@ export class MessageWidget {
     setInContext(inContext: boolean): void {
         this.inContext = inContext;
         this.element.classList.toggle('in-context', inContext);
-
-        // Update indicator text
-        if (inContext) {
-            this.contextIndicator.textContent = 'in context';
-        } else {
-            this.contextIndicator.textContent = '';
-        }
     }
 
     toggleInContext(): void {

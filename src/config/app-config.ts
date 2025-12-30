@@ -82,11 +82,6 @@ class AppConfig implements IAppConfig {
         }, this._config) as T;
     }
 
-    getText(key: string, fallback = ''): string {
-        // Use the current language to access language-specific texts
-        // If key is in format like "app.title", we want to access ui.[currentLanguage].texts.app.title
-        return this.get<string>(fallback, `ui.${this._currentLanguage}.texts.${key}`);
-    }
 
     // Method to switch language
     async setLanguage(language: string): Promise<void> {
@@ -106,13 +101,22 @@ class AppConfig implements IAppConfig {
         }));
     }
 
+
     getCurrentLanguage(): string {
         return this._currentLanguage;
     }
 
-    patchHtmlByMarkers(): void {
+    patchHtmlByMarkers(element: Element | Document | DocumentFragment | undefined = document): void {
+        // Count elements before patching
+        const configElements = element.querySelectorAll('[data-config-key]');
+        const textElements = element.querySelectorAll('[data-text-key]');
+        const templateElements = element.querySelectorAll('template');
+
+        console.log(`[AppConfig] Patching started. Found ${configElements.length} config elements, ${textElements.length} text elements, ${templateElements.length} templates in`, element === document ? 'document' : 'fragment');
+
         // Патчим конфиг-ключи
-        document.querySelectorAll('[data-config-key]').forEach(el => {
+        let configPatched = 0;
+        configElements.forEach(el => {
             const element = el as HTMLElement;
             const key = element.dataset.configKey;
             if (!key) return;
@@ -137,30 +141,39 @@ class AppConfig implements IAppConfig {
                         element.textContent = value;
                     }
                 }
+                configPatched++;
             }
         });
 
-        // Патчим текст-ключи
-        document.querySelectorAll('[data-text-key]').forEach(el => {
+        // Патчим текст-ключи (using the same logic as config keys)
+        let textPatched = 0;
+        textElements.forEach(el => {
             const element = el as HTMLElement;
             const key = element.dataset.textKey;
             if (!key) return;
             // Replace [lang] placeholder with current language in the key
             const resolvedKey = key.replace('[lang]', this._currentLanguage);
-            // The resolvedKey is now in the format like "en.app.title"
-            // We want to access ui.en.texts.app.title
-            // So we need to insert "texts" after the language part
-            const parts = resolvedKey.split('.');
-            if (parts.length >= 2) {
-                const lang = parts[0];
-                const rest = parts.slice(1).join('.'); // e.g., "app.title"
-                const value = this.get<string>('', `ui.${lang}.texts.${rest}`);
-                if (value !== '') {
-                    element.innerHTML = value;
-                }
+            const value = this.get<string>('', resolvedKey);
+            if (value !== '') {
+                element.textContent = value;
+                textPatched++;
             }
-            // Иначе — оставляем то, что в HTML
         });
+
+        console.log(`[AppConfig] Patched ${configPatched} config elements and ${textPatched} text elements`);
+
+        // Also patch content inside template elements
+        let templatesPatched = 0;
+        templateElements.forEach(templateEl => {
+            const template = templateEl as HTMLTemplateElement;
+            if (template.content) {
+                console.log(`[AppConfig] Patching template with id: ${template.id || 'no-id'}`);
+                this.patchHtmlByMarkers(template.content);
+                templatesPatched++;
+            }
+        });
+
+        console.log(`[AppConfig] Patched ${templatesPatched} template elements`);
     }
 
     getCurrentModel(): string {
@@ -181,7 +194,7 @@ class AppConfig implements IAppConfig {
         const currentModel = this.getCurrentModel();
 
         // Get the base title based on current language
-        const baseTitle = this.getText('app.title', 'Chat');
+        const baseTitle = this.get('Chat', 'ui.[lang].texts.app.title');
 
         // Extract just the model name part (without provider prefix if present)
         const modelName = currentModel.split('/').pop() || currentModel;

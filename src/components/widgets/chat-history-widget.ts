@@ -90,8 +90,8 @@ export class ChatHistoryWidget {
             emptyMsg.className = 'chat-history-item';
             // Use appConfig to get the localized text
             emptyMsg.textContent = searchTerm ?
-                appConfig.getText('sidebar.noMatchingChats', 'No matching chats') :
-                appConfig.getText('sidebar.noChats', 'No chats yet');
+                appConfig.get('No matching chats', 'ui.[lang].texts.sidebar.noMatchingChats') :
+                appConfig.get('No chats yet', 'ui.[lang].texts.sidebar.noChats');
             emptyMsg.style.fontStyle = 'italic';
             emptyMsg.style.color = 'var(--ha-color-text-secondary)';
             container.appendChild(emptyMsg);

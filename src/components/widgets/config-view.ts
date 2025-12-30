@@ -63,7 +63,8 @@ export class ConfigView {
             };
 
             localStorage.setItem('gptOverApiConfig', JSON.stringify(newConfig));
-            this.chatPanel.addMessage(appConfig.getText('messages.apiKeySaved', '✅ LLM config saved.'), 'assistant');
+            const messageText = appConfig.get('✅ LLM config saved.', 'ui.[lang].texts.messages.apiKeySaved');
+            this.chatPanel.addMessage(messageText, 'assistant');
 
             // Trigger a custom event to notify that config has changed
             window.dispatchEvent(new CustomEvent('llmConfigChanged', { detail: newConfig }));
