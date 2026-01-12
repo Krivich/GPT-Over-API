@@ -1,0 +1,37 @@
+/* === ANIMATION STYLES === */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(122, 114, 103, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--ha-color-primary);
+    animation: spin 1s ease-in-out infinite;
+}
+svg.icon {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: middle;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.icon-spin {
+    animation: spin 1.5s linear infinite;
+}
+@keyframes ripple {
+    0% {
+        transform: scale(0,0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(120,120);
+        opacity: 0;
+    }
+}

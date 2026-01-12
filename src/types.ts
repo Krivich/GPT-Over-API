@@ -3,7 +3,6 @@ export interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
-    isCollapsed?: boolean;
     metadata?: {
         tfidfTokens?: string[];
         indexedAt?: number;

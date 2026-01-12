@@ -1,0 +1,186 @@
+/* === MESSAGE STYLES === */
+/* Messages */
+.msg {
+    padding: var(--ha-space-4) var(--ha-space-5);
+    margin-bottom: var(--ha-space-4);
+    max-width: 80%;
+    word-wrap: break-word;
+    line-height: 1.6;
+    font-size: 15px;
+    border: none;
+    box-shadow: var(--ha-shadow-message);
+    border-radius: var(--ha-radius-md);
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: box-shadow, background-color;
+    display: flex;
+    gap: var(--ha-space-3);
+    align-items: flex-start;
+    cursor: pointer;
+}
+.msg::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+.msg:hover::after {
+    opacity: 1;
+    background: rgba(122, 114, 103, 0.05);
+}
+.msg:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    z-index: 10;
+}
+.msg.user {
+    align-self: flex-end;
+    background-color: var(--ha-color-user-bg);
+    border-radius: var(--ha-radius-md) 0 var(--ha-radius-md) var(--ha-radius-md);
+    margin-left: auto;
+}
+.msg.assistant {
+    align-self: flex-start;
+    background-color: var(--ha-color-coach-bg);
+    border-radius: 0 var(--ha-radius-md) var(--ha-radius-md) var(--ha-radius-md);
+}
+/* Context styles */
+.msg.in-context {
+    box-shadow: var(--ha-shadow-context);
+    border: 1px solid var(--ha-color-context-border);
+}
+.msg.in-context::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--ha-color-context-border);
+    border-radius: var(--ha-radius-sm) 0 0 var(--ha-radius-sm);
+}
+.msg.in-context.user::before {
+    left: auto;
+    right: 0;
+}
+.msg.in-context.user {
+    background-color: var(--ha-color-context-user);
+}
+.msg.in-context.assistant {
+    background-color: var(--ha-color-context-assistant);
+}
+/* Context indicator */
+.context-indicator {
+    position: absolute;
+    bottom: var(--ha-space-2);
+    right: var(--ha-space-2);
+    font-size: 0.7rem;
+    color: var(--ha-color-text-secondary);
+    opacity: 0;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 2;
+}
+.msg.in-context .context-indicator {
+    opacity: 1;
+    color: var(--ha-color-context-border);
+}
+
+.msg:hover .context-indicator {
+    opacity: 1;
+}
+
+/* Context text - always visible when message is in context */
+.context-text {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.msg.in-context .context-text {
+    opacity: 1;
+}
+
+/* Context hints - visible on hover */
+.context-hint {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.msg:hover .context-hint {
+    opacity: 1;
+}
+
+/* Show remove hint when message is in context and hovered */
+.context-hint-remove {
+    display: none;
+}
+
+.msg.in-context:hover .context-hint-remove {
+    display: inline;
+}
+
+/* Show add hint when message is not in context and hovered */
+.context-hint-add {
+    display: none;
+}
+
+.msg:not(.in-context):hover .context-hint-add {
+    display: inline;
+}
+/* Message content wrapper */
+.message-content-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+/* Typography for markdown content */
+.msg.assistant .message-content {
+    line-height: 1.6;
+    font-size: 15px;
+}
+.msg.assistant .message-content p {
+    margin: 0 0 var(--ha-space-3) 0;
+}
+.msg.assistant .message-content h1,
+.msg.assistant .message-content h2,
+.msg.assistant .message-content h3 {
+    font-weight: 600;
+    margin-top: var(--ha-space-5);
+    margin-bottom: var(--ha-space-3);
+    color: var(--ha-color-text-primary);
+}
+.msg.assistant .message-content strong {
+    font-weight: 600;
+    color: var(--ha-color-text);
+}
+.msg.assistant .message-content ul {
+    padding-left: var(--ha-space-5);
+    margin: var(--ha-space-3) 0;
+}
+.msg.assistant .message-content li {
+    margin-bottom: var(--ha-space-2);
+}
+/* Code blocks */
+.msg.assistant .message-content code {
+    background: #f8f6f3;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+    display: inline-block;
+}
+.msg.assistant .message-content pre {
+    background: #f8f6f3;
+    padding: var(--ha-space-3);
+    border-radius: var(--ha-radius-md);
+    overflow-x: auto;
+    margin: var(--ha-space-4) 0;
+    border: none;
+    line-height: 1.45;
+    box-shadow: none !important;
+}

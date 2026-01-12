@@ -1,0 +1,75 @@
+/* === INPUT AREA STYLES === */
+.input-area {
+    padding: var(--ha-space-4) var(--ha-space-4) var(--ha-space-4) var(--ha-space-4);
+    background: var(--ha-color-surface);
+    border-top: 1px solid var(--ha-color-border);
+    display: flex;
+    gap: var(--ha-space-2);
+}
+#user-input {
+    flex: 1;
+    padding: var(--ha-space-3);
+    border: 1px solid var(--ha-color-border);
+    border-radius: var(--ha-radius-sm);
+    background-color: var(--ha-color-bg-input);
+    color: var(--ha-color-text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+#user-input:focus {
+    outline: none;
+    border-color: var(--ha-color-primary);
+    box-shadow: 0 0 0 3px rgba(122, 114, 103, 0.1);
+}
+#send-btn {
+    padding: var(--ha-space-3) var(--ha-space-4);
+    background: linear-gradient(135deg, var(--ha-color-primary), var(--ha-color-primary-hover));
+    color: white;
+    border: none;
+    border-radius: var(--ha-radius-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.25px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 3px 8px var(--ha-color-primary-shadow);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+#send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--ha-color-primary-shadow);
+}
+#send-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px var(--ha-color-primary-shadow);
+}
+#send-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255,255,255,0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1,1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+#send-btn:active::after {
+    animation: ripple 0.4s linear;
+}
+#send-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+#send-btn svg.icon {
+    vertical-align: middle;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+}

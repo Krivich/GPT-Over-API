@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-config-key="ui.[lang].seo.title">GPT Over API</title>
+    <!-- CSS references for build process - these will be replaced with actual CSS content during build -->
+    <link rel="stylesheet" href="./css/design-tokens.css" data-build-replace>
+    <link rel="stylesheet" href="./css/base-styles.css" data-build-replace>
+    <link rel="stylesheet" href="./css/chat-header-styles.css" data-build-replace>
+    <link rel="stylesheet" href="./css/message-styles.css" data-build-replace>
+    <link rel="stylesheet" href="./css/input-area-styles.css" data-build-replace>
+    <link rel="stylesheet" href="./css/widget-styles.css" data-build-replace>
+    <link rel="stylesheet" href="./css/animation-styles.css" data-build-replace>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<!-- SVG Sprite -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+    <symbol id="icon-send" viewBox="0 0 24 24">
+        <title>Send</title>
+        <polygon points="21.368 12.001 3 21.609 3 14 11 12 3 9.794 3 2.394" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+        <title>Settings</title>
+        <path d="M5.03506429,12.7050339 C5.01187484,12.4731696 5,12.2379716 5,12 C5,11.7620284 5.01187484,11.5268304 5.03506429,11.2949661 L3.20577137,9.23205081 L5.20577137,5.76794919 L7.9069713,6.32070904 C8.28729123,6.0461342 8.69629298,5.80882212 9.12862533,5.61412402 L10,3 L14,3 L14.8713747,5.61412402 C15.303707,5.80882212 15.7127088,6.0461342 16.0930287,6.32070904 L18.7942286,5.76794919 L20.7942286,9.23205081 L18.9649357,11.2949661 C18.9881252,11.5268304 19,11.7620284 19,12 C19,12.2379716 18.9881252,12.4731696 18.9649357,12.7050339 L20.7942286,14.7679492 L18.7942286,18.2320508 L16.0930287,17.679291 C15.7127088,17.9538658 15.303707,18.1911779 14.8713747,18.385876 L14,21 L10,21 L9.12862533,18.385876 C8.69629298,18.1911779 8.28729123,17.9538658 7.9069713,17.679291 L5.20577137,18.2320508 L3.20577137,14.7679492 L5.03506429,12.7050339 Z"/>
+        <circle cx="12" cy="12" r="1"/>
+    </symbol>
+    <symbol id="icon-history" viewBox="0 0 24 24">
+        <title>History</title>
+        <polyline points="1 12 3 14 5 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="12 7 12 12 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12,21 C16.9705627,21 21,16.9705627 21,12 C21,7.02943725 16.9705627,3 12,3 C7.02943725,3 3,7.02943725 3,12 C3,11.975305 3,12.3086383 3,13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+        <title>Plus</title>
+        <path d="M20 12L4 12M12 4L12 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24">
+        <title>Save</title>
+        <path d="M17.2928932,3.29289322 L21,7 L21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 L16.5857864,3 C16.8510029,3 17.1053568,3.10535684 17.2928932,3.29289322 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="10" height="8" x="7" y="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="8" height="5" x="8" y="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-feather" viewBox="0 0 24 24">
+        <title>Feather</title>
+        <path d="M5.12634 17C5.04271 17.6571 5 18.325 5 19V21M5.12634 17C6.03384 9.86861 11.7594 4 20 4L19 8H16L17 10L15 12H11L13 14L12 16H8L5.12634 17Z"/>
+    </symbol>
+</svg>
+<!-- Main chat area -->
+<div id="main-chat-area">
+    <div class="chat-header">
+        <div class="header-title-with-settings">
+            <h1 data-text-key="ui.[lang].texts.app.title">Чат</h1>
+            <button id="settings-btn" class="header-btn" title="Settings">
+                <span class="model-name">Model</span>
+                <svg class="icon"><use href="#icon-settings"></use></svg>
+            </button>
+        </div>
+        <div class="header-buttons">
+            <button id="chat-history-btn" class="header-btn" title="Chat History">
+                <svg class="icon"><use href="#icon-history"></use></svg>
+                <span data-text-key="ui.[lang].texts.app.chatHistoryTitle">Chat History</span>
+            </button>
+        </div>
+    </div>
+    <div id="chat-container" class="chat-container">
+        <!-- Messages will appear here -->
+        <div class="msg assistant in-context" data-text-key="ui.[lang].texts.app.greeting">Hello! How can I help you today?</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" data-config-key="ui.[lang].texts.app.userInputPlaceholder" data-config-attr="placeholder" placeholder="Type your message..." />
+        <button id="send-btn" title="Send">
+            <svg class="icon"><use href="#icon-send"></use></svg>
+        </button>
+    </div>
+</div>
+<!-- Template for chat history widget -->
+<template id="chat-history-widget-template">
+    <div class="ha-widget">
+        <div class="ha-widget-header">
+            <svg class="icon"><use href="#icon-history"></use></svg>
+            <span data-text-key="ui.[lang].texts.app.chatHistoryTitle">Chat History</span>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="text" id="chat-search-input" placeholder=" " data-config-key="ui.[lang].texts.sidebar.searchPlaceholder" />
+            <label class="ha-input-label" data-text-key="ui.[lang].texts.sidebar.searchPlaceholder">Search</label>
+        </div>
+        <div class="chat-history-list">
+            <!-- Chat history items will be added here dynamically -->
+        </div>
+        <button id="new-chat-btn" class="ha-btn ha-btn--primary ha-btn--full">
+            <svg class="icon"><use href="#icon-plus"></use></svg>
+            <span data-text-key="ui.[lang].texts.app.newChatButton">New Chat</span>
+        </button>
+    </div>
+</template>
+<!-- Template for config widget -->
+<template id="config-widget-template">
+    <div class="ha-widget">
+        <div class="ha-widget-header">
+            <svg class="icon"><use href="#icon-settings"></use></svg>
+            <span data-text-key="ui.[lang].texts.settings.title">LLM Settings</span>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="text" name="apiEndpoint" placeholder=" " data-config-key="ui.[lang].texts.settings.defaultApiEndpoint" />
+            <label class="ha-input-label" data-text-key="ui.[lang].texts.settings.apiEndpointLabel">API Endpoint</label>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="password" name="apiKey" autocomplete="off" placeholder=" " />
+            <label class="ha-input-label" data-text-key="ui.[lang].texts.settings.apiKeyLabel">API Key</label>
+        </div>
+        <div class="ha-input-group">
+            <input class="ha-input" type="text" name="model" placeholder=" " data-config-key="ui.[lang].texts.settings.defaultModel" />
+            <label class="ha-input-label" data-text-key="ui.[lang].texts.settings.modelLabel">Model</label>
+        </div>
+        <button class="ha-btn ha-btn--primary ha-btn--full config-save-btn">
+            <svg class="icon"><use href="#icon-save"></use></svg>
+            <span data-text-key="ui.[lang].texts.settings.saveButton">Save</span>
+        </button>
+        <p class="ha-hint" data-text-key="ui.[lang].texts.settings.hint">Changes take effect immediately. API key is stored only in your browser.</p>
+    </div>
+</template>
+<!-- Template for message widget -->
+<template id="message-widget-template">
+    <div class="ha-widget msg">
+        <div class="message-content-wrapper">
+            <div class="message-content" style="display: none;"></div>
+            <div class="message-loading" style="display: none;">
+                <svg class="icon icon-spin" style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;">
+                    <use href="#icon-settings"></use>
+                </svg>
+                <span>Thinking...</span>
+            </div>
+        </div>
+        <span class="context-indicator">
+            <span class="context-text" data-text-key="ui.[lang].texts.context.inContext">in context</span>
+            <span class="context-hint context-hint-remove" data-text-key="ui.[lang].texts.context.tapToRemove">(tap to remove)</span>
+            <span class="context-hint context-hint-add" data-text-key="ui.[lang].texts.context.tapToInclude">(tap to include)</span>
+        </span>
+    </div>
+</template>
+<script src="dist/bundle.js"></script>
+</body>
+</html>

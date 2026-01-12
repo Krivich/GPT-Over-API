@@ -1,0 +1,170 @@
+/* === WIDGET STYLES === */
+.ha-widget {
+    background-color: var(--ha-color-surface);
+    border-radius: var(--ha-radius-lg);
+    padding: var(--ha-space-4);
+    margin-bottom: var(--ha-space-4);
+    box-shadow: var(--ha-shadow);
+    border: 1px solid var(--ha-color-border);
+    transition: all 0.2s ease;
+    transform: none !important;
+    display: flex;
+    flex-direction: column;
+}
+.ha-widget:hover {
+    box-shadow: var(--ha-shadow-hover);
+    transform: none !important;
+}
+.ha-widget-header {
+    font-weight: 600;
+    margin-bottom: var(--ha-space-3);
+    padding-bottom: var(--ha-space-2);
+    border-bottom: 1px solid var(--ha-color-border);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    color: var(--ha-color-text-primary);
+}
+.ha-widget-header svg.icon {
+    margin-right: var(--ha-space-2);
+    stroke: var(--ha-color-text-secondary);
+}
+.ha-input-group {
+    position: relative;
+    margin-bottom: var(--ha-space-5);
+}
+.ha-input {
+    width: 100%;
+    padding: var(--ha-space-3);
+    border: 1px solid var(--ha-color-border);
+    border-radius: var(--ha-radius-md);
+    background: var(--ha-color-bg-input);
+    color: var(--ha-color-text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+.ha-input:focus {
+    border-color: var(--ha-color-primary);
+    box-shadow: 0 0 0 3px rgba(122, 114, 103, 0.1);
+}
+.ha-input-label {
+    position: absolute;
+    top: var(--ha-space-3);
+    left: var(--ha-space-3);
+    right: var(--ha-space-3);
+    max-width: calc(100% - 2 * var(--ha-space-3));
+    color: var(--ha-color-text-placeholder);
+    font-size: 14px;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ha-input:focus + .ha-input-label,
+.ha-input:not(:focus):not(:placeholder-shown) + .ha-input-label {
+    top: calc(-0.5 * var(--ha-space-3) - 1px);
+    left: var(--ha-space-2);
+    right: auto;
+    max-width: calc(100% - var(--ha-space-2));
+    font-size: 12px;
+    background: linear-gradient(
+            to top,
+            var(--ha-color-bg-input) 50%,
+            transparent 50%
+    );
+    padding: 0 var(--ha-space-1);
+    border-radius: var(--ha-radius-xs);
+    color: var(--ha-color-text-secondary);
+}
+.ha-input:focus + .ha-input-label {
+    color: var(--ha-color-primary);
+}
+.ha-btn {
+    padding: var(--ha-space-3);
+    border: none;
+    border-radius: var(--ha-radius-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.ha-btn:hover {
+    transform: translateY(-1px);
+}
+.ha-btn:active {
+    transform: translateY(1px);
+}
+.ha-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255,255,255,0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1,1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+.ha-btn:active::after {
+    animation: ripple 0.4s linear;
+}
+.ha-btn--primary {
+    background: linear-gradient(135deg, var(--ha-color-primary), var(--ha-color-primary-hover));
+    color: white;
+    box-shadow: 0 3px 8px var(--ha-color-primary-shadow);
+}
+.ha-btn--primary:hover {
+    box-shadow: 0 4px 12px var(--ha-color-primary-shadow);
+}
+.ha-btn--primary:active {
+    box-shadow: 0 2px 5px var(--ha-color-primary-shadow);
+}
+.ha-btn svg.icon {
+    margin-right: var(--ha-space-2);
+    vertical-align: middle;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+}
+.ha-hint {
+    font-size: 0.85rem;
+    color: var(--ha-color-text-secondary);
+    margin: var(--ha-space-2) 0 0 0;
+    line-height: 1.5;
+}
+/* Chat history items styling */
+.chat-history-item {
+    padding: var(--ha-space-3);
+    margin: var(--ha-space-2) 0;
+    border-radius: var(--ha-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    user-select: none;
+}
+.chat-history-item:hover {
+    background-color: var(--ha-color-bg-elevated);
+    border-color: var(--ha-color-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.chat-history-item:active {
+    background-color: var(--ha-color-user-bg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.chat-history-item {
+    color: var(--ha-color-text);
+}
+.chat-history-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: var(--ha-space-4);
+    padding-right: 2px;
+}

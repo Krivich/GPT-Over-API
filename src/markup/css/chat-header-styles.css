@@ -1,0 +1,96 @@
+/* === CHAT HEADER STYLES === */
+.chat-header {
+    padding: var(--ha-space-4);
+    border-bottom: 1px solid var(--ha-color-border);
+    background-color: var(--ha-color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+}
+.header-buttons {
+    display: flex;
+    gap: var(--ha-space-2);
+}
+.header-btn {
+    background-color: var(--ha-color-bg-elevated);
+    border: 1px solid var(--ha-color-border);
+    border-radius: var(--ha-radius-sm);
+    padding: var(--ha-space-2);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ha-color-text-secondary);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+.header-btn:hover {
+    background: var(--ha-color-primary);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 3px 8px var(--ha-color-primary-shadow);
+    transform: scale(1.03);
+}
+.header-btn:active {
+    transform: scale(0.98);
+}
+.header-title-with-settings {
+    display: flex;
+    align-items: center;
+    gap: var(--ha-space-2);
+}
+.header-title-with-settings h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--ha-color-text-primary);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+.header-title-with-settings .header-btn,
+.header-buttons .header-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--ha-space-1);
+    padding: var(--ha-space-2) var(--ha-space-3);
+    width: auto;
+    white-space: nowrap;
+}
+.model-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.header-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255,255,255,0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1,1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+.header-btn:active::after {
+    animation: ripple 0.4s linear;
+}
+.header-btn svg.icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+    transition: stroke 0.2s ease;
+}
+.chat-header h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ha-color-text-primary);
+}

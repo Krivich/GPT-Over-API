@@ -1,0 +1,43 @@
+/* === DESIGN TOKENS === */
+:root {
+    /* --- Дизайн-токены --- */
+    --ha-space-1: 4px;
+    --ha-space-2: 8px;
+    --ha-space-3: 12px;
+    --ha-space-4: 16px;
+    --ha-space-5: 20px;
+    --ha-radius-xs: 6px;
+    --ha-radius-sm: 8px;
+    --ha-radius-md: 12px;
+    --ha-radius-lg: 16px;
+    --ha-radius-full: 50%;
+    --ha-btn-size: 40px;
+    --ha-panel-width: 360px;
+    /* --- Цветовая схема --- */
+    --ha-color-bg: #fdfdfd;                /* почти белый, но с теплым оттенком */
+    --ha-color-surface: #ffffff;           /* абсолютно белые виджеты */
+    --ha-color-bg-elevated: #fafafa;       /* для возвышенных элементов */
+    --ha-color-bg-input: #ffffff;
+    --ha-color-text: #3a332a;              /* тёмно-коричневый (не чёрный) */
+    --ha-color-text-primary: #3a332a;
+    --ha-color-text-secondary: #7a7267;    /* тауп для второстепенного текста */
+    --ha-color-text-placeholder: #a8a095;
+    --ha-color-border: #e5e3e0;            /* тонкий тауп-серый для границ */
+    /* Акцентные цвета (тауп) */
+    --ha-color-primary: #7a7267;
+    --ha-color-primary-hover: #6a6358;
+    --ha-color-primary-shadow: rgba(122, 114, 103, 0.15);
+    /* Фоны сообщений */
+    --ha-color-user-bg: #f9f8f6;
+    --ha-color-coach-bg: #fbfbfa;
+    --ha-color-coach-border: #d8d3c9;
+    /* Цвета для контекста */
+    --ha-color-context-user: #f5f4f0;
+    --ha-color-context-assistant: #f8f7f5;
+    --ha-color-context-border: #7a7267;
+    /* Тени — объёмные, но без смещения */
+    --ha-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    --ha-shadow-hover: 0 6px 18px rgba(122, 114, 103, 0.1);
+    --ha-shadow-message: 0 2px 6px rgba(0, 0, 0, 0.02);
+    --ha-shadow-context: 0 2px 8px rgba(122, 114, 103, 0.15);
+}

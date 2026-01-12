@@ -1,0 +1,30 @@
+/* === BASE STYLES === */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: "liga", "kern";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--ha-color-bg);
+    color: var(--ha-color-text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+}
+/* Main chat area */
+#main-chat-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+}
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--ha-space-4);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--ha-color-bg);
+}
