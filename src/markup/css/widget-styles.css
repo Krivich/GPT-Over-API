@@ -258,3 +258,39 @@
     text-align: center;
     font-size: 0.9rem;
 }
+
+/* Collapsed messages widget styling */
+.collapsed-messages-widget {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--ha-space-3) var(--ha-space-4);
+    margin: var(--ha-space-2) 0;
+    background-color: var(--ha-color-bg-elevated);
+    border: 1px dashed var(--ha-color-border);
+    border-radius: var(--ha-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    color: var(--ha-color-text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.collapsed-messages-widget:hover {
+    background-color: var(--ha-color-user-bg);
+    border-style: solid;
+    transform: translateY(-1px);
+}
+
+.collapse-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ha-space-2);
+}
+
+.collapse-count {
+    font-weight: 500;
+    color: var(--ha-color-text-primary);
+}

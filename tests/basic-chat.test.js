@@ -1,7 +1,7 @@
 // tests/basic-chat.test.js
 const { test, expect } = require('@playwright/test');
 
-test.describe('GPT Over API Chat Application', () => {
+test.describe('LocalAIWaves Chat Application', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });

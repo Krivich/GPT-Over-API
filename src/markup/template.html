@@ -154,7 +154,7 @@
     <div class="greeting-widget msg assistant">
         <div class="greeting-content">
             <h3 data-text-key="ui.[lang].texts.greeting.title">Welcome to LocalAIWaves!</h3>
-            <p data-text-key="ui.[lang].texts.greeting.description">This is a local chat client that connects to any LLM with an OpenAI-compatible API.</p>
+            <p data-text-key="ui.[lang].texts.greeting.description">Experimental chat client that connects to any LLM with an OpenAI-compatible API. Features widget-based UI and automatic context building.</p>
             <ul class="greeting-steps">
                 <li>
                     <strong data-text-key="ui.[lang].texts.greeting.step1">1. Configure</strong> - <span data-text-key="ui.[lang].texts.greeting.step1Desc">Click the settings icon to enter your API endpoint and key</span>
@@ -163,13 +163,23 @@
                     <strong data-text-key="ui.[lang].texts.greeting.step2">2. Chat</strong> - <span data-text-key="ui.[lang].texts.greeting.step2Desc">Start typing your message in the input box below</span>
                 </li>
                 <li>
-                    <strong data-text-key="ui.[lang].texts.greeting.step3">3. Manage</strong> - <span data-text-key="ui.[lang].texts.greeting.step3Desc">Use the history button to switch between chats</span>
+                    <strong data-text-key="ui.[lang].texts.greeting.step3">3. Context</strong> - <span data-text-key="ui.[lang].texts.greeting.step3Desc">See which messages are included in context (tap messages to include/exclude)</span>
                 </li>
             </ul>
-            <p class="greeting-note" data-text-key="ui.[lang].texts.greeting.privacyNote">All your data stays on your device - no information is sent to any server.</p>
+            <p class="greeting-note" data-text-key="ui.[lang].texts.greeting.privacyNote">No server required - all data stays on your device except API requests to your chosen provider.</p>
         </div>
     </div>
 </template>
+
+<!-- Template for collapsed messages widget -->
+<template id="collapsed-messages-widget-template">
+    <div class="collapsed-messages-widget">
+        <div class="collapse-info">
+            <span class="collapse-count" data-text-key="ui.[lang].texts.collapsedMessages.messagesSkipped">messages skipped</span>
+        </div>
+    </div>
+</template>
+
 <script src="dist/bundle.js"></script>
 </body>
 </html>

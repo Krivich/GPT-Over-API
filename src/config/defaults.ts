@@ -3,7 +3,7 @@ export const DEFAULTS = {
     ui: {
         // Language-specific content
         en: {
-            appName: 'GPT Over API',
+            appName: 'LocalAIWaves',
             defaultLanguage: 'en',
             thinkingTimeoutSeconds: 25,
             generationTimeoutSeconds: 240,
@@ -11,14 +11,14 @@ export const DEFAULTS = {
             sendButtonText: 'Send',
             thinkingPlaceholder: 'Thinking...',
             seo: {
-                title: 'GPT Over API — Chat with any LLM',
-                description: 'Connect to any LLM API and chat. Open source, self-contained application.',
+                title: 'LocalAIWaves — Experimental Chat Client with Context-Aware Widgets',
+                description: 'Experimental chat client that connects to any LLM with an OpenAI-compatible API. Features widget-based UI and automatic context building.',
                 canonicalUrl: 'https://your-domain.com/'
             },
             texts: {
                 // Main interface
                 app: {
-                    title: 'Chat with',
+                    title: 'LocalAIWaves',
                     greeting: 'Hello! How can I help you today?',
                     settingsButton: 'Settings',
                     newChatButton: 'New Chat',
@@ -59,22 +59,29 @@ export const DEFAULTS = {
                     tapToRemove: '(tap to remove)',
                     tapToInclude: '(tap to include)'
                 },
+                // Collapsed messages
+                collapsedMessages: {
+                    messagesSkipped: 'messages skipped',
+                    messageSkipped: 'message skipped',
+                    clickToHide: 'click again to hide messages',
+                    clickToHideSingular: 'click again to hide message'
+                },
                 // Greeting widget
                 greeting: {
                     title: 'Welcome to LocalAIWaves!',
-                    description: 'This is a local chat client that connects to any LLM with an OpenAI-compatible API.',
+                    description: 'Experimental chat client that connects to any LLM with an OpenAI-compatible API. Features widget-based UI and automatic context building.',
                     step1: '1. Configure',
                     step1Desc: 'Click the settings icon to enter your API endpoint and key',
                     step2: '2. Chat',
                     step2Desc: 'Start typing your message in the input box below',
-                    step3: '3. Manage',
-                    step3Desc: 'Use the history button to switch between chats',
-                    privacyNote: 'All your data stays on your device - no information is sent to any server.'
+                    step3: '3. Context',
+                    step3Desc: 'See which messages are included in context (tap messages to include/exclude)',
+                    privacyNote: 'No server required - all data stays on your device except API requests to your chosen provider.'
                 }
             }
         },
         ru: {
-            appName: 'GPT Over API',
+            appName: 'LocalAIWaves',
             defaultLanguage: 'ru',
             thinkingTimeoutSeconds: 25,
             generationTimeoutSeconds: 240,
@@ -82,8 +89,8 @@ export const DEFAULTS = {
             sendButtonText: 'Отправить',
             thinkingPlaceholder: 'Думаю...',
             seo: {
-                title: 'GPT Over API — Чат с любой LLM',
-                description: 'Подключитесь к любой LLM API и общайтесь. Открытый исходный код, автономное приложение.',
+                title: 'LocalAIWaves — Экспериментальный клиент чата с контекстно-зависимыми виджетами',
+                description: 'Экспериментальный клиент чата, который подключается к любой LLM с API, совместимым с OpenAI. Особенности: интерфейс на основе виджетов и автоматическое построение контекста.',
                 canonicalUrl: 'https://your-domain.com/'
             },
             texts: {
@@ -130,17 +137,24 @@ export const DEFAULTS = {
                     tapToRemove: '(нажмите чтобы убрать)',
                     tapToInclude: '(нажмите чтобы добавить)'
                 },
+                // Collapsed messages
+                collapsedMessages: {
+                    messagesSkipped: 'сообщений скрыто',
+                    messageSkipped: 'сообщение скрыто',
+                    clickToHide: 'нажмите еще раз для скрытия сообщений',
+                    clickToHideSingular: 'нажмите еще раз для скрытия сообщения'
+                },
                 // Greeting widget
                 greeting: {
                     title: 'Добро пожаловать в LocalAIWaves!',
-                    description: 'Это локальный клиент чата, который подключается к любой LLM с API, совместимым с OpenAI.',
+                    description: 'Экспериментальный клиент чата, который подключается к любой LLM с API, совместимым с OpenAI. Особенности: интерфейс на основе виджетов и автоматическое построение контекста.',
                     step1: '1. Настройка',
                     step1Desc: 'Нажмите значок настроек, чтобы ввести конечную точку и ключ API',
                     step2: '2. Чат',
                     step2Desc: 'Начните вводить сообщение в поле ввода ниже',
-                    step3: '3. Управление',
-                    step3Desc: 'Используйте кнопку истории, чтобы переключаться между чатами',
-                    privacyNote: 'Все ваши данные остаются на вашем устройстве - никакая информация не отправляется ни на какие серверы.'
+                    step3: '3. Контекст',
+                    step3Desc: 'Смотрите, какие сообщения включены в контекст (нажимайте на сообщения, чтобы включить/исключить)',
+                    privacyNote: 'Сервер не требуется - все данные остаются на вашем устройстве, кроме запросов к выбранному провайдеру.'
                 }
             }
         }

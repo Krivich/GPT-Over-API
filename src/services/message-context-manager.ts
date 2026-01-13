@@ -65,6 +65,10 @@ export class MessageContextManager implements IMessageContextManager {
 
             // Update visual state of messages
             this.updateMessageContextStates(contextIds);
+
+            // Also collapse non-context sequences
+            const messageIds = allMessages.map(m => m.id);
+            this.chatPanel.collapseNonContextSequences(messageIds, contextIds);
         }, 100); // Reduced debounce for more responsive UI
     }
 
@@ -133,6 +137,17 @@ export class MessageContextManager implements IMessageContextManager {
     // Additional methods for managing the TF-IDF index
     updateTfidfIndex(messages: Message[]): void {
         this.tfidfIndex.buildIndex(messages);
+    }
+
+    /**
+     * Get the IDs of messages that are currently in context
+     * @param query The current query
+     * @param allMessages All messages in the chat
+     * @returns Set of message IDs that are in context
+     */
+    getInContextMessageIds(query: string, allMessages: Message[]): Set<string> {
+        const contextMessages = this.getContextMessages(query, allMessages);
+        return new Set(contextMessages.map(m => m.id));
     }
 
     serializeTfidfIndex(): string {

@@ -18,6 +18,7 @@ export interface IChatPanel {
   updateWidget(widgetId: string, data?: any): void;
   getElement(): HTMLElement;
   setVisibleRange(startIndex: number, endIndex: number): void;
+  collapseNonContextSequences(messageIds: string[], inContextMessageIds: Set<string>, minSequenceLength?: number): void;
 }
 
 /**
@@ -108,6 +109,7 @@ export interface IChatService {
 export interface IMessageContextManager {
   getContextMessages(query: string, allMessages: Message[]): Message[];
   updateContextHighlights(query: string, allMessages: Message[]): void;
+  getInContextMessageIds(query: string, allMessages: Message[]): Set<string>;
   applyManualContextOverrides(baseContext: Message[], allMessages: Message[]): Message[];
   toggleMessageInContext(messageId: string, inContext: boolean): void;
   clearContextHighlights(): void;

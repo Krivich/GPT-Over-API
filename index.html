@@ -711,6 +711,42 @@ body {
     text-align: center;
     font-size: 0.9rem;
 }
+
+/* Collapsed messages widget styling */
+.collapsed-messages-widget {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--ha-space-3) var(--ha-space-4);
+    margin: var(--ha-space-2) 0;
+    background-color: var(--ha-color-bg-elevated);
+    border: 1px dashed var(--ha-color-border);
+    border-radius: var(--ha-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    color: var(--ha-color-text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.collapsed-messages-widget:hover {
+    background-color: var(--ha-color-user-bg);
+    border-style: solid;
+    transform: translateY(-1px);
+}
+
+.collapse-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ha-space-2);
+}
+
+.collapse-count {
+    font-weight: 500;
+    color: var(--ha-color-text-primary);
+}
 </style>
     <style>
 /* === ANIMATION STYLES === */
@@ -893,7 +929,7 @@ svg.icon {
     <div class="greeting-widget msg assistant">
         <div class="greeting-content">
             <h3 data-text-key="ui.[lang].texts.greeting.title">Welcome to LocalAIWaves!</h3>
-            <p data-text-key="ui.[lang].texts.greeting.description">This is a local chat client that connects to any LLM with an OpenAI-compatible API.</p>
+            <p data-text-key="ui.[lang].texts.greeting.description">Experimental chat client that connects to any LLM with an OpenAI-compatible API. Features widget-based UI and automatic context building.</p>
             <ul class="greeting-steps">
                 <li>
                     <strong data-text-key="ui.[lang].texts.greeting.step1">1. Configure</strong> - <span data-text-key="ui.[lang].texts.greeting.step1Desc">Click the settings icon to enter your API endpoint and key</span>
@@ -902,127 +938,32 @@ svg.icon {
                     <strong data-text-key="ui.[lang].texts.greeting.step2">2. Chat</strong> - <span data-text-key="ui.[lang].texts.greeting.step2Desc">Start typing your message in the input box below</span>
                 </li>
                 <li>
-                    <strong data-text-key="ui.[lang].texts.greeting.step3">3. Manage</strong> - <span data-text-key="ui.[lang].texts.greeting.step3Desc">Use the history button to switch between chats</span>
+                    <strong data-text-key="ui.[lang].texts.greeting.step3">3. Context</strong> - <span data-text-key="ui.[lang].texts.greeting.step3Desc">See which messages are included in context (tap messages to include/exclude)</span>
                 </li>
             </ul>
-            <p class="greeting-note" data-text-key="ui.[lang].texts.greeting.privacyNote">All your data stays on your device - no information is sent to any server.</p>
+            <p class="greeting-note" data-text-key="ui.[lang].texts.greeting.privacyNote">No server required - all data stays on your device except API requests to your chosen provider.</p>
         </div>
     </div>
 </template>
+
+<!-- Template for collapsed messages widget -->
+<template id="collapsed-messages-widget-template">
+    <div class="collapsed-messages-widget">
+        <div class="collapse-info">
+            <span class="collapse-count" data-text-key="ui.[lang].texts.collapsedMessages.messagesSkipped">messages skipped</span>
+        </div>
+    </div>
+</template>
+
 <script>
 "use strict";
 (() => {
-  // src/components/chat-panel.ts
-  var ChatPanel = class {
-    constructor(element) {
-      this.element = element;
-    }
-    widgets = /* @__PURE__ */ new Map();
-    visibleWidgets = /* @__PURE__ */ new Set();
-    allWidgetIds = [];
-    clear() {
-      this.widgets.forEach(({ widget }) => {
-        widget.destroy();
-      });
-      this.widgets.clear();
-      this.visibleWidgets.clear();
-      this.allWidgetIds = [];
-      this.element.innerHTML = "";
-    }
-    addMessage(text, role) {
-      const msg = document.createElement("div");
-      msg.className = `msg ${role}`;
-      msg.textContent = text;
-      this.element.appendChild(msg);
-      this.scrollToBottom();
-    }
-    addMessageWidget(widget, role) {
-      widget.classList.add("msg", role);
-      this.element.appendChild(widget);
-      this.scrollToBottom();
-    }
-    addWidget(widget, role) {
-      widget.init(this.element);
-      const widgetId = widget.getId();
-      const widgetElement = widget.getElement();
-      widgetElement.classList.add("msg", role);
-      this.widgets.set(widgetId, { widget, element: widgetElement, role });
-      this.allWidgetIds.push(widgetId);
-      this.visibleWidgets.add(widgetId);
-      this.element.appendChild(widgetElement);
-      this.scrollToBottom();
-    }
-    removeWidget(widgetId) {
-      const widgetData = this.widgets.get(widgetId);
-      if (widgetData) {
-        if (widgetData.element.parentNode === this.element) {
-          this.element.removeChild(widgetData.element);
-        }
-        this.widgets.delete(widgetId);
-        this.visibleWidgets.delete(widgetId);
-        this.allWidgetIds = this.allWidgetIds.filter((id) => id !== widgetId);
-        widgetData.widget.destroy();
-      }
-    }
-    updateWidget(widgetId, data) {
-      const widgetData = this.widgets.get(widgetId);
-      if (widgetData) {
-        widgetData.widget.update(data);
-      }
-    }
-    scrollToBottom() {
-      this.element.scrollTop = this.element.scrollHeight;
-    }
-    getElement() {
-      return this.element;
-    }
-    // Method to control which widgets are visible in the viewport
-    setVisibleRange(startIndex, endIndex) {
-      this.visibleWidgets.clear();
-      for (let i = startIndex; i <= endIndex && i < this.allWidgetIds.length; i++) {
-        const widgetId = this.allWidgetIds[i];
-        this.visibleWidgets.add(widgetId);
-        const widgetData = this.widgets.get(widgetId);
-        if (widgetData) {
-          widgetData.element.style.display = "block";
-        }
-      }
-      for (const [widgetId, widgetData] of this.widgets) {
-        if (!this.visibleWidgets.has(widgetId)) {
-          widgetData.element.style.display = "none";
-        }
-      }
-    }
-    // Additional UI-focused methods
-    setMessageInContext(messageId, inContext) {
-      const messageElement = this.element.querySelector(`[data-message-id="${messageId}"]`);
-      if (messageElement) {
-        messageElement.classList.toggle("in-context", inContext);
-      }
-    }
-    updateMessageContent(messageId, content) {
-      const messageElement = this.element.querySelector(`[data-message-id="${messageId}"]`);
-      if (messageElement) {
-        messageElement.textContent = content;
-      }
-    }
-    highlightMessage(messageId) {
-      const messageElement = this.element.querySelector(`[data-message-id="${messageId}"]`);
-      if (messageElement) {
-        messageElement.classList.add("highlighted");
-        setTimeout(() => {
-          messageElement.classList.remove("highlighted");
-        }, 2e3);
-      }
-    }
-  };
-
   // src/config/defaults.ts
   var DEFAULTS = {
     ui: {
       // Language-specific content
       en: {
-        appName: "GPT Over API",
+        appName: "LocalAIWaves",
         defaultLanguage: "en",
         thinkingTimeoutSeconds: 25,
         generationTimeoutSeconds: 240,
@@ -1030,14 +971,14 @@ svg.icon {
         sendButtonText: "Send",
         thinkingPlaceholder: "Thinking...",
         seo: {
-          title: "GPT Over API \u2014 Chat with any LLM",
-          description: "Connect to any LLM API and chat. Open source, self-contained application.",
+          title: "LocalAIWaves \u2014 Experimental Chat Client with Context-Aware Widgets",
+          description: "Experimental chat client that connects to any LLM with an OpenAI-compatible API. Features widget-based UI and automatic context building.",
           canonicalUrl: "https://your-domain.com/"
         },
         texts: {
           // Main interface
           app: {
-            title: "Chat with",
+            title: "LocalAIWaves",
             greeting: "Hello! How can I help you today?",
             settingsButton: "Settings",
             newChatButton: "New Chat",
@@ -1078,22 +1019,29 @@ svg.icon {
             tapToRemove: "(tap to remove)",
             tapToInclude: "(tap to include)"
           },
+          // Collapsed messages
+          collapsedMessages: {
+            messagesSkipped: "messages skipped",
+            messageSkipped: "message skipped",
+            clickToHide: "click again to hide messages",
+            clickToHideSingular: "click again to hide message"
+          },
           // Greeting widget
           greeting: {
             title: "Welcome to LocalAIWaves!",
-            description: "This is a local chat client that connects to any LLM with an OpenAI-compatible API.",
+            description: "Experimental chat client that connects to any LLM with an OpenAI-compatible API. Features widget-based UI and automatic context building.",
             step1: "1. Configure",
             step1Desc: "Click the settings icon to enter your API endpoint and key",
             step2: "2. Chat",
             step2Desc: "Start typing your message in the input box below",
-            step3: "3. Manage",
-            step3Desc: "Use the history button to switch between chats",
-            privacyNote: "All your data stays on your device - no information is sent to any server."
+            step3: "3. Context",
+            step3Desc: "See which messages are included in context (tap messages to include/exclude)",
+            privacyNote: "No server required - all data stays on your device except API requests to your chosen provider."
           }
         }
       },
       ru: {
-        appName: "GPT Over API",
+        appName: "LocalAIWaves",
         defaultLanguage: "ru",
         thinkingTimeoutSeconds: 25,
         generationTimeoutSeconds: 240,
@@ -1101,8 +1049,8 @@ svg.icon {
         sendButtonText: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C",
         thinkingPlaceholder: "\u0414\u0443\u043C\u0430\u044E...",
         seo: {
-          title: "GPT Over API \u2014 \u0427\u0430\u0442 \u0441 \u043B\u044E\u0431\u043E\u0439 LLM",
-          description: "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u0441\u044C \u043A \u043B\u044E\u0431\u043E\u0439 LLM API \u0438 \u043E\u0431\u0449\u0430\u0439\u0442\u0435\u0441\u044C. \u041E\u0442\u043A\u0440\u044B\u0442\u044B\u0439 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u043A\u043E\u0434, \u0430\u0432\u0442\u043E\u043D\u043E\u043C\u043D\u043E\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435.",
+          title: "LocalAIWaves \u2014 \u042D\u043A\u0441\u043F\u0435\u0440\u0438\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0438\u0435\u043D\u0442 \u0447\u0430\u0442\u0430 \u0441 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u043D\u043E-\u0437\u0430\u0432\u0438\u0441\u0438\u043C\u044B\u043C\u0438 \u0432\u0438\u0434\u0436\u0435\u0442\u0430\u043C\u0438",
+          description: "\u042D\u043A\u0441\u043F\u0435\u0440\u0438\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0438\u0435\u043D\u0442 \u0447\u0430\u0442\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0430\u0435\u0442\u0441\u044F \u043A \u043B\u044E\u0431\u043E\u0439 LLM \u0441 API, \u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u043C \u0441 OpenAI. \u041E\u0441\u043E\u0431\u0435\u043D\u043D\u043E\u0441\u0442\u0438: \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u0432 \u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u043F\u043E\u0441\u0442\u0440\u043E\u0435\u043D\u0438\u0435 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u0430.",
           canonicalUrl: "https://your-domain.com/"
         },
         texts: {
@@ -1149,17 +1097,24 @@ svg.icon {
             tapToRemove: "(\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u0443\u0431\u0440\u0430\u0442\u044C)",
             tapToInclude: "(\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C)"
           },
+          // Collapsed messages
+          collapsedMessages: {
+            messagesSkipped: "\u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439 \u0441\u043A\u0440\u044B\u0442\u043E",
+            messageSkipped: "\u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u0441\u043A\u0440\u044B\u0442\u043E",
+            clickToHide: "\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437 \u0434\u043B\u044F \u0441\u043A\u0440\u044B\u0442\u0438\u044F \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439",
+            clickToHideSingular: "\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437 \u0434\u043B\u044F \u0441\u043A\u0440\u044B\u0442\u0438\u044F \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F"
+          },
           // Greeting widget
           greeting: {
             title: "\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 LocalAIWaves!",
-            description: "\u042D\u0442\u043E \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0438\u0435\u043D\u0442 \u0447\u0430\u0442\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0430\u0435\u0442\u0441\u044F \u043A \u043B\u044E\u0431\u043E\u0439 LLM \u0441 API, \u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u043C \u0441 OpenAI.",
+            description: "\u042D\u043A\u0441\u043F\u0435\u0440\u0438\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0438\u0435\u043D\u0442 \u0447\u0430\u0442\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0430\u0435\u0442\u0441\u044F \u043A \u043B\u044E\u0431\u043E\u0439 LLM \u0441 API, \u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u043C \u0441 OpenAI. \u041E\u0441\u043E\u0431\u0435\u043D\u043D\u043E\u0441\u0442\u0438: \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u0432 \u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u043F\u043E\u0441\u0442\u0440\u043E\u0435\u043D\u0438\u0435 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u0430.",
             step1: "1. \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430",
             step1Desc: "\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0437\u043D\u0430\u0447\u043E\u043A \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A, \u0447\u0442\u043E\u0431\u044B \u0432\u0432\u0435\u0441\u0442\u0438 \u043A\u043E\u043D\u0435\u0447\u043D\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0438 \u043A\u043B\u044E\u0447 API",
             step2: "2. \u0427\u0430\u0442",
             step2Desc: "\u041D\u0430\u0447\u043D\u0438\u0442\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u0432 \u043F\u043E\u043B\u0435 \u0432\u0432\u043E\u0434\u0430 \u043D\u0438\u0436\u0435",
-            step3: "3. \u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435",
-            step3Desc: "\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043A\u043D\u043E\u043F\u043A\u0443 \u0438\u0441\u0442\u043E\u0440\u0438\u0438, \u0447\u0442\u043E\u0431\u044B \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0430\u0442\u044C\u0441\u044F \u043C\u0435\u0436\u0434\u0443 \u0447\u0430\u0442\u0430\u043C\u0438",
-            privacyNote: "\u0412\u0441\u0435 \u0432\u0430\u0448\u0438 \u0434\u0430\u043D\u043D\u044B\u0435 \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 - \u043D\u0438\u043A\u0430\u043A\u0430\u044F \u0438\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044F \u043D\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u043D\u0438 \u043D\u0430 \u043A\u0430\u043A\u0438\u0435 \u0441\u0435\u0440\u0432\u0435\u0440\u044B."
+            step3: "3. \u041A\u043E\u043D\u0442\u0435\u043A\u0441\u0442",
+            step3Desc: "\u0421\u043C\u043E\u0442\u0440\u0438\u0442\u0435, \u043A\u0430\u043A\u0438\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u044B \u0432 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442 (\u043D\u0430\u0436\u0438\u043C\u0430\u0439\u0442\u0435 \u043D\u0430 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F, \u0447\u0442\u043E\u0431\u044B \u0432\u043A\u043B\u044E\u0447\u0438\u0442\u044C/\u0438\u0441\u043A\u043B\u044E\u0447\u0438\u0442\u044C)",
+            privacyNote: "\u0421\u0435\u0440\u0432\u0435\u0440 \u043D\u0435 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F - \u0432\u0441\u0435 \u0434\u0430\u043D\u043D\u044B\u0435 \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435, \u043A\u0440\u043E\u043C\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u043E\u0432 \u043A \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u043E\u043C\u0443 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0443."
           }
         }
       }
@@ -1342,6 +1297,316 @@ svg.icon {
     }
   };
   var appConfig = new AppConfig();
+
+  // src/components/widgets/collapsed-messages-widget.ts
+  var CollapsedMessagesWidget = class {
+    constructor(count, messageIds, allMessageElements, messageElementsMap) {
+      this.count = count;
+      this.messageIds = messageIds;
+      this.allMessageElements = allMessageElements;
+      this.messageElementsMap = messageElementsMap;
+      this.element = this.createWidgetElement();
+    }
+    element;
+    isExpanded = false;
+    messagesToCollapse = [];
+    parentContainer = null;
+    createWidgetElement() {
+      const templateEl = document.getElementById("collapsed-messages-widget-template");
+      if (!(templateEl instanceof HTMLTemplateElement)) {
+        throw new Error("Collapsed messages widget template not found");
+      }
+      const frag = document.importNode(templateEl.content, true);
+      const div = frag.firstElementChild;
+      if (!div) throw new Error("Collapsed messages widget root element missing");
+      const countSpan = div.querySelector(".collapse-count");
+      if (countSpan) {
+        countSpan.textContent = `${this.count} ${this.getPluralForm()}`;
+      }
+      div.addEventListener("click", () => this.toggle());
+      return div;
+    }
+    getPluralForm() {
+      if (this.count === 1) {
+        return appConfig.get("message skipped", "ui.[lang].texts.collapsedMessages.messageSkipped");
+      } else {
+        return appConfig.get("messages skipped", "ui.[lang].texts.collapsedMessages.messagesSkipped");
+      }
+    }
+    getId() {
+      const firstId = this.messageIds[0] || "unknown";
+      const lastId = this.messageIds[this.messageIds.length - 1] || "unknown";
+      return `collapsed-${firstId}-${lastId}`;
+    }
+    getType() {
+      return "collapsed-messages";
+    }
+    getElement() {
+      return this.element;
+    }
+    update(data) {
+    }
+    init(container) {
+      this.parentContainer = container || null;
+    }
+    destroy() {
+    }
+    toggle() {
+      if (this.isExpanded) {
+        this.collapse();
+      } else {
+        this.expand();
+      }
+    }
+    expand() {
+      if (this.isExpanded) return;
+      this.isExpanded = true;
+      for (const messageId of this.messageIds) {
+        const messageElement = this.messageElementsMap.get(messageId);
+        if (messageElement) {
+          messageElement.style.display = "block";
+        }
+      }
+      const countSpan = this.element.querySelector(".collapse-count");
+      if (countSpan) {
+        const lang = localStorage.getItem("preferred_language") || navigator.language.split("-")[0];
+        if (lang === "ru" || lang === "ru-RU") {
+          countSpan.textContent = this.getPluralFormReverse();
+        } else {
+          countSpan.textContent = this.count === 1 ? "click again to hide message" : "click again to hide messages";
+        }
+      }
+    }
+    getPluralFormReverse() {
+      if (this.count === 1) {
+        return appConfig.get("click again to hide message", "ui.[lang].texts.collapsedMessages.clickToHideSingular");
+      } else {
+        return appConfig.get("click again to hide messages", "ui.[lang].texts.collapsedMessages.clickToHide");
+      }
+    }
+    collapse() {
+      if (!this.isExpanded) return;
+      this.isExpanded = false;
+      for (const messageId of this.messageIds) {
+        const messageElement = this.messageElementsMap.get(messageId);
+        if (messageElement) {
+          messageElement.style.display = "none";
+        }
+      }
+      const countSpan = this.element.querySelector(".collapse-count");
+      if (countSpan) {
+        const messageText = this.count === 1 ? appConfig.get("message skipped", "ui.[lang].texts.collapsedMessages.messageSkipped") : appConfig.get("messages skipped", "ui.[lang].texts.collapsedMessages.messagesSkipped");
+        countSpan.textContent = `${this.count} ${messageText}`;
+      }
+    }
+  };
+
+  // src/components/chat-panel.ts
+  var ChatPanel = class {
+    // Track message elements by ID
+    constructor(element) {
+      this.element = element;
+    }
+    widgets = /* @__PURE__ */ new Map();
+    visibleWidgets = /* @__PURE__ */ new Set();
+    allWidgetIds = [];
+    messageElements = /* @__PURE__ */ new Map();
+    clear() {
+      this.widgets.forEach(({ widget }) => {
+        widget.destroy();
+      });
+      this.widgets.clear();
+      this.visibleWidgets.clear();
+      this.allWidgetIds = [];
+      this.element.innerHTML = "";
+    }
+    addMessage(text, role) {
+      const msg = document.createElement("div");
+      msg.className = `msg ${role}`;
+      msg.textContent = text;
+      this.element.appendChild(msg);
+      this.scrollToBottom();
+    }
+    addMessageWidget(widget, role) {
+      widget.classList.add("msg", role);
+      this.element.appendChild(widget);
+      this.scrollToBottom();
+    }
+    addWidget(widget, role) {
+      widget.init(this.element);
+      const widgetId = widget.getId();
+      const widgetElement = widget.getElement();
+      widgetElement.classList.add("msg", role);
+      this.widgets.set(widgetId, { widget, element: widgetElement, role });
+      this.allWidgetIds.push(widgetId);
+      this.visibleWidgets.add(widgetId);
+      this.element.appendChild(widgetElement);
+      this.messageElements.set(widgetId, widgetElement);
+      this.scrollToBottom();
+    }
+    removeWidget(widgetId) {
+      const widgetData = this.widgets.get(widgetId);
+      if (widgetData) {
+        if (widgetData.element.parentNode === this.element) {
+          this.element.removeChild(widgetData.element);
+        }
+        this.widgets.delete(widgetId);
+        this.visibleWidgets.delete(widgetId);
+        this.allWidgetIds = this.allWidgetIds.filter((id) => id !== widgetId);
+        widgetData.widget.destroy();
+      }
+    }
+    updateWidget(widgetId, data) {
+      const widgetData = this.widgets.get(widgetId);
+      if (widgetData) {
+        widgetData.widget.update(data);
+      }
+    }
+    scrollToBottom() {
+      this.element.scrollTop = this.element.scrollHeight;
+    }
+    getElement() {
+      return this.element;
+    }
+    // Method to control which widgets are visible in the viewport
+    setVisibleRange(startIndex, endIndex) {
+      this.visibleWidgets.clear();
+      for (let i = startIndex; i <= endIndex && i < this.allWidgetIds.length; i++) {
+        const widgetId = this.allWidgetIds[i];
+        this.visibleWidgets.add(widgetId);
+        const widgetData = this.widgets.get(widgetId);
+        if (widgetData) {
+          widgetData.element.style.display = "block";
+        }
+      }
+      for (const [widgetId, widgetData] of this.widgets) {
+        if (!this.visibleWidgets.has(widgetId)) {
+          widgetData.element.style.display = "none";
+        }
+      }
+    }
+    // Additional UI-focused methods
+    setMessageInContext(messageId, inContext) {
+      const messageElement = this.element.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.classList.toggle("in-context", inContext);
+      }
+    }
+    updateMessageContent(messageId, content) {
+      const messageElement = this.element.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.textContent = content;
+      }
+    }
+    highlightMessage(messageId) {
+      const messageElement = this.element.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.classList.add("highlighted");
+        setTimeout(() => {
+          messageElement.classList.remove("highlighted");
+        }, 2e3);
+      }
+    }
+    /**
+     * Collapse sequences of messages that are not in context
+     * @param messageIds Array of all message IDs in order
+     * @param inContextMessageIds Set of message IDs that are in context
+     * @param minSequenceLength Minimum length of sequence to collapse (default: 3)
+     */
+    collapseNonContextSequences(messageIds, inContextMessageIds, minSequenceLength = 3) {
+      this.removeAllCollapsedWidgets();
+      messageIds.forEach((id) => {
+        const element = this.messageElements.get(id);
+        if (element) {
+          element.style.display = "block";
+        }
+      });
+      const sequencesToCollapse = [];
+      let currentSequenceStart = -1;
+      let currentSequenceCount = 0;
+      for (let i = 0; i < messageIds.length; i++) {
+        const messageId = messageIds[i];
+        const isInContext = inContextMessageIds.has(messageId);
+        if (!isInContext) {
+          if (currentSequenceStart === -1) {
+            currentSequenceStart = i;
+            currentSequenceCount = 1;
+          } else {
+            currentSequenceCount++;
+          }
+        } else {
+          if (currentSequenceStart !== -1 && currentSequenceCount >= minSequenceLength) {
+            sequencesToCollapse.push({
+              start: currentSequenceStart,
+              end: i - 1,
+              count: currentSequenceCount
+            });
+          }
+          currentSequenceStart = -1;
+          currentSequenceCount = 0;
+        }
+      }
+      if (currentSequenceStart !== -1 && currentSequenceCount >= minSequenceLength) {
+        sequencesToCollapse.push({
+          start: currentSequenceStart,
+          end: messageIds.length - 1,
+          count: currentSequenceCount
+        });
+      }
+      sequencesToCollapse.reverse();
+      sequencesToCollapse.forEach((sequence) => {
+        this.replaceSequenceWithCollapsedWidget(
+          messageIds,
+          sequence.start,
+          sequence.end,
+          sequence.count
+        );
+      });
+    }
+    removeAllCollapsedWidgets() {
+      const collapsedWidgetIds = Array.from(this.widgets.keys()).filter(
+        (id) => id.startsWith("collapsed-")
+      );
+      collapsedWidgetIds.forEach((widgetId) => {
+        this.removeWidget(widgetId);
+      });
+    }
+    replaceSequenceWithCollapsedWidget(messageIds, startIdx, endIdx, count) {
+      const elementsToHide = [];
+      const messageIdsToCollapse = [];
+      for (let i = startIdx; i <= endIdx; i++) {
+        const messageId = messageIds[i];
+        const element = this.messageElements.get(messageId);
+        if (element) {
+          elementsToHide.push(element);
+          messageIdsToCollapse.push(messageId);
+        }
+      }
+      const allMessageElements = Array.from(this.element.children);
+      const collapsedWidget = new CollapsedMessagesWidget(count, messageIdsToCollapse, allMessageElements, this.messageElements);
+      const widgetElement = collapsedWidget.getElement();
+      if (elementsToHide.length > 0) {
+        const firstElement = elementsToHide[0];
+        const parent = firstElement.parentNode;
+        if (parent) {
+          parent.insertBefore(widgetElement, firstElement);
+          elementsToHide.forEach((el) => {
+            el.style.display = "none";
+          });
+        }
+      } else {
+        this.element.appendChild(widgetElement);
+      }
+      const widgetId = collapsedWidget.getId();
+      this.widgets.set(widgetId, {
+        widget: collapsedWidget,
+        element: widgetElement,
+        role: "assistant"
+      });
+      this.allWidgetIds.push(widgetId);
+      this.visibleWidgets.add(widgetId);
+    }
+  };
 
   // src/components/widgets/config-view.ts
   var ConfigView = class {
@@ -2124,6 +2389,8 @@ svg.icon {
         const contextMsgs = this.getContextMessages(query, allMessages);
         const contextIds = new Set(contextMsgs.map((m) => m.id));
         this.updateMessageContextStates(contextIds);
+        const messageIds = allMessages.map((m) => m.id);
+        this.chatPanel.collapseNonContextSequences(messageIds, contextIds);
       }, 100);
     }
     updateMessageContextStates(contextIds) {
@@ -2169,6 +2436,16 @@ svg.icon {
     // Additional methods for managing the TF-IDF index
     updateTfidfIndex(messages) {
       this.tfidfIndex.buildIndex(messages);
+    }
+    /**
+     * Get the IDs of messages that are currently in context
+     * @param query The current query
+     * @param allMessages All messages in the chat
+     * @returns Set of message IDs that are in context
+     */
+    getInContextMessageIds(query, allMessages) {
+      const contextMessages = this.getContextMessages(query, allMessages);
+      return new Set(contextMessages.map((m) => m.id));
     }
     serializeTfidfIndex() {
       return this.tfidfIndex.serialize();
