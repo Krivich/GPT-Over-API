@@ -9,6 +9,7 @@ export const DEFAULTS = {
             generationTimeoutSeconds: 240,
             aiThinkingPlaceholder: 'Thinking...',
             sendButtonText: 'Send',
+            thinkingPlaceholder: 'Thinking...',
             seo: {
                 title: 'GPT Over API — Chat with any LLM',
                 description: 'Connect to any LLM API and chat. Open source, self-contained application.',
@@ -43,7 +44,8 @@ export const DEFAULTS = {
                     requestCancelled: 'Request cancelled.',
                     errorPrefix: 'Error: ',
                     emptyMessageError: 'Message cannot be empty.',
-                    apiError: 'LLM API Error: '
+                    apiError: 'LLM API Error: ',
+                    apiNotConfiguredMessage: 'LLM is not configured. Please set up your API settings.'
                 },
                 // Sidebar
                 sidebar: {
@@ -56,6 +58,18 @@ export const DEFAULTS = {
                     inContext: 'in context',
                     tapToRemove: '(tap to remove)',
                     tapToInclude: '(tap to include)'
+                },
+                // Greeting widget
+                greeting: {
+                    title: 'Welcome to LocalAIWaves!',
+                    description: 'This is a local chat client that connects to any LLM with an OpenAI-compatible API.',
+                    step1: '1. Configure',
+                    step1Desc: 'Click the settings icon to enter your API endpoint and key',
+                    step2: '2. Chat',
+                    step2Desc: 'Start typing your message in the input box below',
+                    step3: '3. Manage',
+                    step3Desc: 'Use the history button to switch between chats',
+                    privacyNote: 'All your data stays on your device - no information is sent to any server.'
                 }
             }
         },
@@ -66,6 +80,7 @@ export const DEFAULTS = {
             generationTimeoutSeconds: 240,
             aiThinkingPlaceholder: 'Думаю...',
             sendButtonText: 'Отправить',
+            thinkingPlaceholder: 'Думаю...',
             seo: {
                 title: 'GPT Over API — Чат с любой LLM',
                 description: 'Подключитесь к любой LLM API и общайтесь. Открытый исходный код, автономное приложение.',
@@ -100,7 +115,8 @@ export const DEFAULTS = {
                     requestCancelled: 'Запрос отменен.',
                     errorPrefix: 'Ошибка: ',
                     emptyMessageError: 'Сообщение не может быть пустым.',
-                    apiError: 'Ошибка LLM API: '
+                    apiError: 'Ошибка LLM API: ',
+                    apiNotConfiguredMessage: 'LLM не настроен. Пожалуйста, настройте параметры API.'
                 },
                 // Sidebar
                 sidebar: {
@@ -113,6 +129,18 @@ export const DEFAULTS = {
                     inContext: 'в контексте',
                     tapToRemove: '(нажмите чтобы убрать)',
                     tapToInclude: '(нажмите чтобы добавить)'
+                },
+                // Greeting widget
+                greeting: {
+                    title: 'Добро пожаловать в LocalAIWaves!',
+                    description: 'Это локальный клиент чата, который подключается к любой LLM с API, совместимым с OpenAI.',
+                    step1: '1. Настройка',
+                    step1Desc: 'Нажмите значок настроек, чтобы ввести конечную точку и ключ API',
+                    step2: '2. Чат',
+                    step2Desc: 'Начните вводить сообщение в поле ввода ниже',
+                    step3: '3. Управление',
+                    step3Desc: 'Используйте кнопку истории, чтобы переключаться между чатами',
+                    privacyNote: 'Все ваши данные остаются на вашем устройстве - никакая информация не отправляется ни на какие серверы.'
                 }
             }
         }

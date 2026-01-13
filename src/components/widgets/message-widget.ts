@@ -1,7 +1,8 @@
 // src/components/widgets/message-widget.ts
+import { IWidget } from '../../interfaces.js';
 import { md } from '../../utils/markdown.js';
 
-export class MessageWidget {
+export class MessageWidget implements IWidget {
     private element: HTMLElement;
     private contentEl: HTMLElement | null = null;
     private loadingEl: HTMLElement | null = null;
@@ -9,6 +10,8 @@ export class MessageWidget {
     public readonly messageId: string;
     private inContext: boolean = false;
     private isProcessing: boolean = false;
+    private container: HTMLElement | null = null;
+    private content: string = '';
 
     constructor(content: string = '', messageId?: string) {
         const templateEl = document.getElementById('message-widget-template');
@@ -45,11 +48,55 @@ export class MessageWidget {
             this.toggleInContext();
         });
 
+        this.content = content;
         if (content) {
             this.updateContent(content);
         } else {
             this.showLoading();
         }
+    }
+
+    init(container: HTMLElement): void {
+        this.container = container;
+        // Add styling classes when initializing - we'll set the role correctly when added to chat panel
+        this.element.classList.add('msg');
+    }
+
+    update(data?: any): void {
+        if (data && typeof data === 'object') {
+            if ('content' in data) {
+                this.updateContent(data.content);
+            }
+            if ('role' in data) {
+                // Update role classes
+                this.element.classList.remove('user', 'assistant');
+                this.element.classList.add(data.role);
+            }
+            if ('inContext' in data) {
+                this.setInContext(data.inContext);
+            }
+        }
+    }
+
+    destroy(): void {
+        // Clean up event listeners and references
+        this.element.removeEventListener('click', this.element.onclick as any);
+        if (this.container && this.element.parentNode === this.container) {
+            this.container.removeChild(this.element);
+        }
+        this.container = null;
+    }
+
+    getElement(): HTMLElement {
+        return this.element;
+    }
+
+    getId(): string {
+        return this.messageId;
+    }
+
+    getType(): string {
+        return 'message';
     }
 
     updateContent(content: string): void {
@@ -59,6 +106,7 @@ export class MessageWidget {
             this.contentEl.style.display = 'block';
             this.loadingEl.style.display = 'none';
             this.isProcessing = false;
+            this.content = content;
         }
     }
 
@@ -68,10 +116,6 @@ export class MessageWidget {
             this.loadingEl.style.display = 'block';
             this.isProcessing = true;
         }
-    }
-
-    getElement(): HTMLElement {
-        return this.element;
     }
 
     setInContext(inContext: boolean): void {
@@ -99,7 +143,7 @@ export class MessageWidget {
     }
 
     getContent(): string {
-        return this.contentEl?.innerHTML || '';
+        return this.content;
     }
 
     getMessageId(): string {

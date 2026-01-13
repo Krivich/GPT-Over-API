@@ -17,8 +17,8 @@ test.describe('GPT Over API Chat Application', () => {
     await expect(page.locator('#chat-history-btn')).toBeVisible();
     await expect(page.locator('#settings-btn')).toBeVisible();
 
-    // Check if initial message is displayed
-    await expect(page.locator('.msg.assistant').first()).toContainText('Hello! How can I help you today?');
+    // Check if initial greeting widget is displayed
+    await expect(page.locator('.msg.assistant').first()).toContainText('Welcome to LocalAIWaves!');
   });
 
   test('should display chat history modal when history button is clicked', async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('GPT Over API Chat Application', () => {
     await page.locator('#new-chat-btn').click();
 
     // Check if the new chat is created and the greeting appears
-    await expect(page.locator('.msg.assistant').first()).toContainText('Hello! How can I help you today?');
+    await expect(page.locator('.msg.assistant').first()).toContainText('Welcome to LocalAIWaves!');
   });
 
   test('should handle empty messages', async ({ page }) => {

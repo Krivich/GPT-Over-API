@@ -2,11 +2,13 @@ import { IChatHistoryManager, IChatPanel, IChatService, IMessageContextManager }
 import { Message } from '../types.js';
 import { appConfig } from '../config/app-config.js';
 import { MessageWidget } from '../components/widgets/message-widget.js';
+import { GreetingWidget } from '../components/widgets/greeting-widget.js';
 
 export class ChatHistoryManager implements IChatHistoryManager {
     private currentChatId: string | null = null;
     private onChatSelectHandler: ((chatId: string) => void) | null = null;
     private onNewChatHandler: (() => void) | null = null;
+    private onChatHistoryChange: (() => void) | null = null;
 
     constructor(
         private readonly chatPanel: IChatPanel,
@@ -93,7 +95,7 @@ export class ChatHistoryManager implements IChatHistoryManager {
                 messages.forEach((msg: Message) => {
                     const displayRole = (msg.role as string) === 'assist' ? 'assistant' : msg.role;
                     const widget = new MessageWidget(msg.content, msg.id);
-                    this.chatPanel.addMessageWidget(widget.getElement(), displayRole);
+                    this.chatPanel.addWidget(widget, displayRole);
 
                     // Fix old message roles
                     if ((msg.role as string) === 'assist') {
@@ -103,10 +105,6 @@ export class ChatHistoryManager implements IChatHistoryManager {
                     // Add to chat service's current messages
                     this.chatService.addToCurrentChat(msg);
                 });
-
-                if (this.onChatSelectHandler) {
-                    this.onChatSelectHandler(chatId);
-                }
             } else {
                 if (this.onNewChatHandler) {
                     this.onNewChatHandler();
@@ -126,29 +124,26 @@ export class ChatHistoryManager implements IChatHistoryManager {
 
         this.chatPanel.clear();
 
-        // Add welcome message
-        const welcomeId = this.generateId();
-        const welcomeMessage = {
-            id: welcomeId,
-            role: 'assistant' as const,
-            content: appConfig.get('Hello! How can I help you today?', 'ui.[lang].texts.app.greeting')
-        };
+        // Reset current chat ID to null - we'll create the chat when the first message is sent
+        this.currentChatId = null;
 
-        const welcomeWidget = new MessageWidget(welcomeMessage.content, welcomeId);
-        welcomeWidget.setInContext(true); // Welcome message is always in context
-        this.chatPanel.addMessageWidget(welcomeWidget.getElement(), 'assistant');
-
-        // Add to chat service's current messages
-        this.chatService.addToCurrentChat(welcomeMessage);
-
-        // Create new chat
-        const newChatTitle = appConfig.get('New Chat', 'ui.[lang].texts.app.newChatTitle');
-        const newChatId = this.addChat(newChatTitle);
-        this.currentChatId = newChatId;
+        // Add greeting widget instead of just a welcome message
+        const greetingWidget = new GreetingWidget();
+        this.chatPanel.addWidget(greetingWidget, 'assistant');
     }
 
     saveMessageToChat(message: Message): void {
-        if (!this.currentChatId) return;
+        // If there's no current chat ID, create a new chat
+        if (!this.currentChatId) {
+            // Create a new chat with the first message content as the title
+            let title = appConfig.get('New Chat', 'ui.[lang].texts.app.newChatTitle');
+            if (message.role === 'user') {
+                title = message.content.substring(0, 30) + (message.content.length > 30 ? '...' : '');
+            }
+
+            const newChatId = this.addChat(title);
+            this.currentChatId = newChatId;
+        }
 
         try {
             let messages: Message[] = [];
@@ -159,12 +154,6 @@ export class ChatHistoryManager implements IChatHistoryManager {
 
             messages.push(message);
             localStorage.setItem(`gptOverApiChat_${this.currentChatId}`, JSON.stringify(messages));
-
-            // Update chat title for first user message
-            if (messages.length === 2 && message.role === 'user') {
-                const title = message.content.substring(0, 30) + (message.content.length > 30 ? '...' : '');
-                this.updateChatTitle(this.currentChatId, title);
-            }
         } catch (e) {
             console.error('Error saving message to chat:', e);
         }
@@ -193,6 +182,11 @@ export class ChatHistoryManager implements IChatHistoryManager {
                 if (chat) {
                     chat.title = title;
                     localStorage.setItem('gptOverApiChatHistory', JSON.stringify(history));
+
+                    // Notify that chat history has changed
+                    if (this.onChatHistoryChange) {
+                        this.onChatHistoryChange();
+                    }
                 }
             }
         } catch (e) {

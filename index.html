@@ -471,11 +471,41 @@ body {
 .ha-widget-header {
     font-weight: 600;
     margin-bottom: var(--ha-space-3);
-    padding-bottom: var(--ha-space-2);
+    padding: var(--ha-space-3) var(--ha-space-3) var(--ha-space-2) var(--ha-space-3);
     border-bottom: 1px solid var(--ha-color-border);
     font-size: 1.1rem;
     display: flex;
     align-items: center;
+    color: var(--ha-color-text-primary);
+    justify-content: space-between;
+    width: 100%; /* Ensure header spans full width of widget */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+.ha-widget-header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--ha-space-2);
+    flex: 1;
+    min-width: 0; /* Prevents flex item from overflowing */
+}
+.ha-widget-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--ha-color-text-secondary);
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--ha-radius-sm);
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+}
+.ha-widget-header .close-btn:hover {
+    background-color: var(--ha-color-bg-elevated);
     color: var(--ha-color-text-primary);
 }
 .ha-widget-header svg.icon {
@@ -485,6 +515,7 @@ body {
 .ha-input-group {
     position: relative;
     margin-bottom: var(--ha-space-5);
+    width: 100%;
 }
 .ha-input {
     width: 100%;
@@ -602,6 +633,8 @@ body {
     transition: all 0.2s ease;
     border: 1px solid transparent;
     user-select: none;
+    width: 100%;
+    box-sizing: border-box;
 }
 .chat-history-item:hover {
     background-color: var(--ha-color-bg-elevated);
@@ -619,7 +652,64 @@ body {
     max-height: 300px;
     overflow-y: auto;
     margin-bottom: var(--ha-space-4);
-    padding-right: 2px;
+    padding-right: 0;
+    width: 100%;
+}
+
+/* Greeting widget styling */
+.greeting-widget {
+    background: linear-gradient(135deg, var(--ha-color-bg-elevated), var(--ha-color-surface));
+    border-radius: var(--ha-radius-xl);
+    padding: var(--ha-space-6);
+    margin: var(--ha-space-4) 0;
+    box-shadow: var(--ha-shadow);
+    border: 1px solid var(--ha-color-border-light);
+    transition: all 0.3s ease;
+}
+.greeting-content h3 {
+    color: var(--ha-color-primary);
+    margin: 0 0 var(--ha-space-4) 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+}
+.greeting-content p {
+    color: var(--ha-color-text-primary);
+    margin: 0 0 var(--ha-space-4) 0;
+    line-height: 1.6;
+    text-align: center;
+}
+.greeting-steps {
+    list-style: none;
+    padding: 0;
+    margin: var(--ha-space-4) 0;
+    text-align: left;
+}
+.greeting-steps li {
+    margin-bottom: var(--ha-space-3);
+    padding-left: var(--ha-space-4);
+    position: relative;
+    line-height: 1.5;
+}
+.greeting-steps li strong {
+    color: var(--ha-color-text-primary);
+}
+.greeting-steps li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--ha-color-primary);
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.greeting-note {
+    color: var(--ha-color-text-secondary);
+    font-style: italic;
+    margin: var(--ha-space-4) 0 0 0;
+    padding-top: var(--ha-space-4);
+    border-top: 1px dashed var(--ha-color-border);
+    text-align: center;
+    font-size: 0.9rem;
 }
 </style>
     <style>
@@ -664,7 +754,7 @@ svg.icon {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-<!-- SVG Sprite -->
+<!-- SVG Sprite from ikonate-->
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
     <symbol id="icon-send" viewBox="0 0 24 24">
         <title>Send</title>
@@ -694,6 +784,9 @@ svg.icon {
     <symbol id="icon-feather" viewBox="0 0 24 24">
         <title>Feather</title>
         <path d="M5.12634 17C5.04271 17.6571 5 18.325 5 19V21M5.12634 17C6.03384 9.86861 11.7594 4 20 4L19 8H16L17 10L15 12H11L13 14L12 16H8L5.12634 17Z"/>
+    </symbol>
+    <symbol  id="icon-close" viewBox="0 0 24 24">
+        <title id="closeIconTitle">Close</title> <path d="M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575"/>
     </symbol>
 </svg>
 <!-- Main chat area -->
@@ -728,8 +821,11 @@ svg.icon {
 <template id="chat-history-widget-template">
     <div class="ha-widget">
         <div class="ha-widget-header">
-            <svg class="icon"><use href="#icon-history"></use></svg>
-            <span data-text-key="ui.[lang].texts.app.chatHistoryTitle">Chat History</span>
+            <div class="ha-widget-header-content">
+                <svg class="icon"><use href="#icon-history"></use></svg>
+                <span data-text-key="ui.[lang].texts.app.chatHistoryTitle">Chat History</span>
+            </div>
+            <button class="close-btn" aria-label="Close">&times;</button>
         </div>
         <div class="ha-input-group">
             <input class="ha-input" type="text" id="chat-search-input" placeholder=" " data-config-key="ui.[lang].texts.sidebar.searchPlaceholder" />
@@ -748,8 +844,11 @@ svg.icon {
 <template id="config-widget-template">
     <div class="ha-widget">
         <div class="ha-widget-header">
-            <svg class="icon"><use href="#icon-settings"></use></svg>
-            <span data-text-key="ui.[lang].texts.settings.title">LLM Settings</span>
+            <div class="ha-widget-header-content">
+                <svg class="icon"><use href="#icon-settings"></use></svg>
+                <span data-text-key="ui.[lang].texts.settings.title">LLM Settings</span>
+            </div>
+            <button class="close-btn" aria-label="Close">&times;</button>
         </div>
         <div class="ha-input-group">
             <input class="ha-input" type="text" name="apiEndpoint" placeholder=" " data-config-key="ui.[lang].texts.settings.defaultApiEndpoint" />
@@ -779,7 +878,7 @@ svg.icon {
                 <svg class="icon icon-spin" style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;">
                     <use href="#icon-settings"></use>
                 </svg>
-                <span>Thinking...</span>
+                <span data-text-key="ui.[lang].thinkingPlaceholder">Thinking...</span>
             </div>
         </div>
         <span class="context-indicator">
@@ -787,6 +886,27 @@ svg.icon {
             <span class="context-hint context-hint-remove" data-text-key="ui.[lang].texts.context.tapToRemove">(tap to remove)</span>
             <span class="context-hint context-hint-add" data-text-key="ui.[lang].texts.context.tapToInclude">(tap to include)</span>
         </span>
+    </div>
+</template>
+<!-- Template for greeting widget -->
+<template id="greeting-widget-template">
+    <div class="greeting-widget msg assistant">
+        <div class="greeting-content">
+            <h3 data-text-key="ui.[lang].texts.greeting.title">Welcome to LocalAIWaves!</h3>
+            <p data-text-key="ui.[lang].texts.greeting.description">This is a local chat client that connects to any LLM with an OpenAI-compatible API.</p>
+            <ul class="greeting-steps">
+                <li>
+                    <strong data-text-key="ui.[lang].texts.greeting.step1">1. Configure</strong> - <span data-text-key="ui.[lang].texts.greeting.step1Desc">Click the settings icon to enter your API endpoint and key</span>
+                </li>
+                <li>
+                    <strong data-text-key="ui.[lang].texts.greeting.step2">2. Chat</strong> - <span data-text-key="ui.[lang].texts.greeting.step2Desc">Start typing your message in the input box below</span>
+                </li>
+                <li>
+                    <strong data-text-key="ui.[lang].texts.greeting.step3">3. Manage</strong> - <span data-text-key="ui.[lang].texts.greeting.step3Desc">Use the history button to switch between chats</span>
+                </li>
+            </ul>
+            <p class="greeting-note" data-text-key="ui.[lang].texts.greeting.privacyNote">All your data stays on your device - no information is sent to any server.</p>
+        </div>
     </div>
 </template>
 <script>
@@ -797,7 +917,16 @@ svg.icon {
     constructor(element) {
       this.element = element;
     }
+    widgets = /* @__PURE__ */ new Map();
+    visibleWidgets = /* @__PURE__ */ new Set();
+    allWidgetIds = [];
     clear() {
+      this.widgets.forEach(({ widget }) => {
+        widget.destroy();
+      });
+      this.widgets.clear();
+      this.visibleWidgets.clear();
+      this.allWidgetIds = [];
       this.element.innerHTML = "";
     }
     addMessage(text, role) {
@@ -812,11 +941,57 @@ svg.icon {
       this.element.appendChild(widget);
       this.scrollToBottom();
     }
+    addWidget(widget, role) {
+      widget.init(this.element);
+      const widgetId = widget.getId();
+      const widgetElement = widget.getElement();
+      widgetElement.classList.add("msg", role);
+      this.widgets.set(widgetId, { widget, element: widgetElement, role });
+      this.allWidgetIds.push(widgetId);
+      this.visibleWidgets.add(widgetId);
+      this.element.appendChild(widgetElement);
+      this.scrollToBottom();
+    }
+    removeWidget(widgetId) {
+      const widgetData = this.widgets.get(widgetId);
+      if (widgetData) {
+        if (widgetData.element.parentNode === this.element) {
+          this.element.removeChild(widgetData.element);
+        }
+        this.widgets.delete(widgetId);
+        this.visibleWidgets.delete(widgetId);
+        this.allWidgetIds = this.allWidgetIds.filter((id) => id !== widgetId);
+        widgetData.widget.destroy();
+      }
+    }
+    updateWidget(widgetId, data) {
+      const widgetData = this.widgets.get(widgetId);
+      if (widgetData) {
+        widgetData.widget.update(data);
+      }
+    }
     scrollToBottom() {
       this.element.scrollTop = this.element.scrollHeight;
     }
     getElement() {
       return this.element;
+    }
+    // Method to control which widgets are visible in the viewport
+    setVisibleRange(startIndex, endIndex) {
+      this.visibleWidgets.clear();
+      for (let i = startIndex; i <= endIndex && i < this.allWidgetIds.length; i++) {
+        const widgetId = this.allWidgetIds[i];
+        this.visibleWidgets.add(widgetId);
+        const widgetData = this.widgets.get(widgetId);
+        if (widgetData) {
+          widgetData.element.style.display = "block";
+        }
+      }
+      for (const [widgetId, widgetData] of this.widgets) {
+        if (!this.visibleWidgets.has(widgetId)) {
+          widgetData.element.style.display = "none";
+        }
+      }
     }
     // Additional UI-focused methods
     setMessageInContext(messageId, inContext) {
@@ -853,6 +1028,7 @@ svg.icon {
         generationTimeoutSeconds: 240,
         aiThinkingPlaceholder: "Thinking...",
         sendButtonText: "Send",
+        thinkingPlaceholder: "Thinking...",
         seo: {
           title: "GPT Over API \u2014 Chat with any LLM",
           description: "Connect to any LLM API and chat. Open source, self-contained application.",
@@ -887,7 +1063,8 @@ svg.icon {
             requestCancelled: "Request cancelled.",
             errorPrefix: "Error: ",
             emptyMessageError: "Message cannot be empty.",
-            apiError: "LLM API Error: "
+            apiError: "LLM API Error: ",
+            apiNotConfiguredMessage: "LLM is not configured. Please set up your API settings."
           },
           // Sidebar
           sidebar: {
@@ -900,6 +1077,18 @@ svg.icon {
             inContext: "in context",
             tapToRemove: "(tap to remove)",
             tapToInclude: "(tap to include)"
+          },
+          // Greeting widget
+          greeting: {
+            title: "Welcome to LocalAIWaves!",
+            description: "This is a local chat client that connects to any LLM with an OpenAI-compatible API.",
+            step1: "1. Configure",
+            step1Desc: "Click the settings icon to enter your API endpoint and key",
+            step2: "2. Chat",
+            step2Desc: "Start typing your message in the input box below",
+            step3: "3. Manage",
+            step3Desc: "Use the history button to switch between chats",
+            privacyNote: "All your data stays on your device - no information is sent to any server."
           }
         }
       },
@@ -910,6 +1099,7 @@ svg.icon {
         generationTimeoutSeconds: 240,
         aiThinkingPlaceholder: "\u0414\u0443\u043C\u0430\u044E...",
         sendButtonText: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C",
+        thinkingPlaceholder: "\u0414\u0443\u043C\u0430\u044E...",
         seo: {
           title: "GPT Over API \u2014 \u0427\u0430\u0442 \u0441 \u043B\u044E\u0431\u043E\u0439 LLM",
           description: "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u0441\u044C \u043A \u043B\u044E\u0431\u043E\u0439 LLM API \u0438 \u043E\u0431\u0449\u0430\u0439\u0442\u0435\u0441\u044C. \u041E\u0442\u043A\u0440\u044B\u0442\u044B\u0439 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u043A\u043E\u0434, \u0430\u0432\u0442\u043E\u043D\u043E\u043C\u043D\u043E\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435.",
@@ -944,7 +1134,8 @@ svg.icon {
             requestCancelled: "\u0417\u0430\u043F\u0440\u043E\u0441 \u043E\u0442\u043C\u0435\u043D\u0435\u043D.",
             errorPrefix: "\u041E\u0448\u0438\u0431\u043A\u0430: ",
             emptyMessageError: "\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043F\u0443\u0441\u0442\u044B\u043C.",
-            apiError: "\u041E\u0448\u0438\u0431\u043A\u0430 LLM API: "
+            apiError: "\u041E\u0448\u0438\u0431\u043A\u0430 LLM API: ",
+            apiNotConfiguredMessage: "LLM \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D. \u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u0442\u0435 \u043F\u0430\u0440\u0430\u043C\u0435\u0442\u0440\u044B API."
           },
           // Sidebar
           sidebar: {
@@ -957,6 +1148,18 @@ svg.icon {
             inContext: "\u0432 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u0435",
             tapToRemove: "(\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u0443\u0431\u0440\u0430\u0442\u044C)",
             tapToInclude: "(\u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C)"
+          },
+          // Greeting widget
+          greeting: {
+            title: "\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 LocalAIWaves!",
+            description: "\u042D\u0442\u043E \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0438\u0435\u043D\u0442 \u0447\u0430\u0442\u0430, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0430\u0435\u0442\u0441\u044F \u043A \u043B\u044E\u0431\u043E\u0439 LLM \u0441 API, \u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u043C \u0441 OpenAI.",
+            step1: "1. \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430",
+            step1Desc: "\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0437\u043D\u0430\u0447\u043E\u043A \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A, \u0447\u0442\u043E\u0431\u044B \u0432\u0432\u0435\u0441\u0442\u0438 \u043A\u043E\u043D\u0435\u0447\u043D\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0438 \u043A\u043B\u044E\u0447 API",
+            step2: "2. \u0427\u0430\u0442",
+            step2Desc: "\u041D\u0430\u0447\u043D\u0438\u0442\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u0432 \u043F\u043E\u043B\u0435 \u0432\u0432\u043E\u0434\u0430 \u043D\u0438\u0436\u0435",
+            step3: "3. \u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435",
+            step3Desc: "\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043A\u043D\u043E\u043F\u043A\u0443 \u0438\u0441\u0442\u043E\u0440\u0438\u0438, \u0447\u0442\u043E\u0431\u044B \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0430\u0442\u044C\u0441\u044F \u043C\u0435\u0436\u0434\u0443 \u0447\u0430\u0442\u0430\u043C\u0438",
+            privacyNote: "\u0412\u0441\u0435 \u0432\u0430\u0448\u0438 \u0434\u0430\u043D\u043D\u044B\u0435 \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F \u043D\u0430 \u0432\u0430\u0448\u0435\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 - \u043D\u0438\u043A\u0430\u043A\u0430\u044F \u0438\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044F \u043D\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u043D\u0438 \u043D\u0430 \u043A\u0430\u043A\u0438\u0435 \u0441\u0435\u0440\u0432\u0435\u0440\u044B."
           }
         }
       }
@@ -1144,22 +1347,23 @@ svg.icon {
   var ConfigView = class {
     constructor(chatPanel) {
       this.chatPanel = chatPanel;
+      this.widgetId = `config-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     }
-    getType() {
-      return "config";
-    }
-    show() {
+    element = null;
+    widgetId;
+    init(container) {
       const templateEl = document.getElementById("config-widget-template");
       if (!(templateEl instanceof HTMLTemplateElement)) {
         throw new Error("Config widget template not found");
       }
       const frag = document.importNode(templateEl.content, true);
-      const widget = frag.firstElementChild;
-      if (!widget) throw new Error("Config widget root element missing");
-      const endpointInput = widget.querySelector('[name="apiEndpoint"]');
-      const keyInput = widget.querySelector('[name="apiKey"]');
-      const modelInput = widget.querySelector('[name="model"]');
-      const saveBtn = widget.querySelector(".config-save-btn");
+      this.element = frag.firstElementChild;
+      if (!this.element) throw new Error("Config widget root element missing");
+      const endpointInput = this.element.querySelector('[name="apiEndpoint"]');
+      const keyInput = this.element.querySelector('[name="apiKey"]');
+      const modelInput = this.element.querySelector('[name="model"]');
+      const saveBtn = this.element.querySelector(".config-save-btn");
+      const closeBtn = this.element.querySelector(".close-btn");
       if (!endpointInput || !keyInput || !modelInput || !saveBtn) {
         throw new Error("Config widget form elements missing");
       }
@@ -1172,13 +1376,6 @@ svg.icon {
       endpointInput.value = llm.apiEndpoint || appConfig.get("https://openrouter.ai/api/v1/chat/completions", "llm.defaultApiEndpoint");
       keyInput.value = llm.apiKey || "";
       modelInput.value = llm.model || appConfig.get("tngtech/deepseek-r1t2-chimera:free", "llm.defaultModel");
-      const freeze = () => {
-        widget.querySelectorAll(".ha-input").forEach((el) => {
-          el.disabled = true;
-        });
-        saveBtn.remove();
-        widget.classList.add("frozen");
-      };
       saveBtn.addEventListener("click", () => {
         const newConfig = {
           llm: {
@@ -1191,10 +1388,47 @@ svg.icon {
         const messageText = appConfig.get("\u2705 LLM config saved.", "ui.[lang].texts.messages.apiKeySaved");
         this.chatPanel.addMessage(messageText, "assistant");
         window.dispatchEvent(new CustomEvent("llmConfigChanged", { detail: newConfig }));
-        freeze();
       });
-      this.chatPanel.addMessageWidget(widget, "assistant");
-      return { freeze };
+      if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+          this.destroy();
+        });
+      }
+    }
+    update(data) {
+      if (!this.element) return;
+      if (data && typeof data === "object") {
+        const endpointInput = this.element.querySelector('[name="apiEndpoint"]');
+        const keyInput = this.element.querySelector('[name="apiKey"]');
+        const modelInput = this.element.querySelector('[name="model"]');
+        if (endpointInput && "apiEndpoint" in data) {
+          endpointInput.value = data.apiEndpoint;
+        }
+        if (keyInput && "apiKey" in data) {
+          keyInput.value = data.apiKey;
+        }
+        if (modelInput && "model" in data) {
+          modelInput.value = data.model;
+        }
+      }
+    }
+    destroy() {
+      if (this.element && this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
+      }
+      this.element = null;
+    }
+    getElement() {
+      if (!this.element) {
+        throw new Error("ConfigView not initialized");
+      }
+      return this.element;
+    }
+    getId() {
+      return this.widgetId;
+    }
+    getType() {
+      return "config";
     }
   };
 
@@ -1271,47 +1505,83 @@ svg.icon {
       this.chatPanel = chatPanel;
       this.onChatSelect = onChatSelect;
       this.onNewChat = onNewChat;
+      this.widgetId = `chat-history-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     }
-    getType() {
-      return "chat-history";
-    }
-    show() {
+    element = null;
+    widgetId;
+    historyList = null;
+    newChatBtn = null;
+    searchInput = null;
+    init(container) {
       const templateEl = document.getElementById("chat-history-widget-template");
       if (!(templateEl instanceof HTMLTemplateElement)) {
         throw new Error("Chat history widget template not found");
       }
       const frag = document.importNode(templateEl.content, true);
-      const widget = frag.firstElementChild;
-      if (!widget) throw new Error("Chat history widget root element missing");
-      const historyList = widget.querySelector(".chat-history-list");
-      const newChatBtn = widget.querySelector("#new-chat-btn");
-      const searchInput = widget.querySelector("#chat-search-input");
-      if (!historyList || !newChatBtn) {
+      this.element = frag.firstElementChild;
+      if (!this.element) throw new Error("Chat history widget root element missing");
+      this.historyList = this.element.querySelector(".chat-history-list");
+      this.newChatBtn = this.element.querySelector("#new-chat-btn");
+      this.searchInput = this.element.querySelector("#chat-search-input");
+      const closeBtn = this.element.querySelector(".close-btn");
+      if (!this.historyList || !this.newChatBtn) {
         throw new Error("Chat history widget elements missing");
       }
-      this.renderChatHistory(historyList);
-      if (searchInput) {
-        searchInput.addEventListener("input", (e) => {
-          const searchTerm = e.target.value.toLowerCase();
-          this.renderChatHistory(historyList, searchTerm);
+      this.renderChatHistory();
+      if (this.searchInput) {
+        this.searchInput.addEventListener("input", this.handleSearch.bind(this));
+      }
+      this.newChatBtn.addEventListener("click", this.handleNewChatClick.bind(this));
+      if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+          this.destroy();
         });
       }
-      newChatBtn.addEventListener("click", () => {
-        this.onNewChat();
-      });
-      const freeze = () => {
-        widget.querySelectorAll("button, input").forEach((el) => {
-          if (el instanceof HTMLButtonElement || el instanceof HTMLInputElement) {
-            el.disabled = true;
-          }
-        });
-        widget.classList.add("frozen");
-      };
-      this.chatPanel.addMessageWidget(widget, "assistant");
-      return { freeze };
     }
-    renderChatHistory(container, searchTerm = "") {
-      container.innerHTML = "";
+    update(data) {
+      if (data && typeof data === "object") {
+        if ("refresh" in data && data.refresh === true) {
+          this.renderChatHistory();
+        }
+      }
+    }
+    destroy() {
+      if (this.searchInput) {
+        this.searchInput.removeEventListener("input", this.handleSearch.bind(this));
+      }
+      if (this.newChatBtn) {
+        this.newChatBtn.removeEventListener("click", this.handleNewChatClick.bind(this));
+      }
+      if (this.element && this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
+      }
+      this.element = null;
+      this.historyList = null;
+      this.newChatBtn = null;
+      this.searchInput = null;
+    }
+    getElement() {
+      if (!this.element) {
+        throw new Error("ChatHistoryWidget not initialized");
+      }
+      return this.element;
+    }
+    getId() {
+      return this.widgetId;
+    }
+    getType() {
+      return "chat-history";
+    }
+    handleSearch(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      this.renderChatHistory(searchTerm);
+    }
+    handleNewChatClick() {
+      this.onNewChat();
+    }
+    renderChatHistory(searchTerm = "") {
+      if (!this.historyList) return;
+      this.historyList.innerHTML = "";
       const storedHistory = localStorage.getItem("gptOverApiChatHistory");
       let chatHistory = [];
       if (storedHistory) {
@@ -1332,7 +1602,7 @@ svg.icon {
         emptyMsg.textContent = searchTerm ? appConfig.get("No matching chats", "ui.[lang].texts.sidebar.noMatchingChats") : appConfig.get("No chats yet", "ui.[lang].texts.sidebar.noChats");
         emptyMsg.style.fontStyle = "italic";
         emptyMsg.style.color = "var(--ha-color-text-secondary)";
-        container.appendChild(emptyMsg);
+        this.historyList.appendChild(emptyMsg);
         return;
       }
       chatHistory.forEach((chat) => {
@@ -1343,7 +1613,7 @@ svg.icon {
         chatItem.addEventListener("click", () => {
           this.onChatSelect(chat.id);
         });
-        container.appendChild(chatItem);
+        this.historyList.appendChild(chatItem);
       });
     }
   };
@@ -1410,6 +1680,8 @@ svg.icon {
     messageId;
     inContext = false;
     isProcessing = false;
+    container = null;
+    content = "";
     constructor(content = "", messageId) {
       const templateEl = document.getElementById("message-widget-template");
       if (!(templateEl instanceof HTMLTemplateElement)) {
@@ -1433,11 +1705,46 @@ svg.icon {
         e.stopPropagation();
         this.toggleInContext();
       });
+      this.content = content;
       if (content) {
         this.updateContent(content);
       } else {
         this.showLoading();
       }
+    }
+    init(container) {
+      this.container = container;
+      this.element.classList.add("msg");
+    }
+    update(data) {
+      if (data && typeof data === "object") {
+        if ("content" in data) {
+          this.updateContent(data.content);
+        }
+        if ("role" in data) {
+          this.element.classList.remove("user", "assistant");
+          this.element.classList.add(data.role);
+        }
+        if ("inContext" in data) {
+          this.setInContext(data.inContext);
+        }
+      }
+    }
+    destroy() {
+      this.element.removeEventListener("click", this.element.onclick);
+      if (this.container && this.element.parentNode === this.container) {
+        this.container.removeChild(this.element);
+      }
+      this.container = null;
+    }
+    getElement() {
+      return this.element;
+    }
+    getId() {
+      return this.messageId;
+    }
+    getType() {
+      return "message";
     }
     updateContent(content) {
       if (this.contentEl && this.loadingEl) {
@@ -1445,6 +1752,7 @@ svg.icon {
         this.contentEl.style.display = "block";
         this.loadingEl.style.display = "none";
         this.isProcessing = false;
+        this.content = content;
       }
     }
     showLoading() {
@@ -1453,9 +1761,6 @@ svg.icon {
         this.loadingEl.style.display = "block";
         this.isProcessing = true;
       }
-    }
-    getElement() {
-      return this.element;
     }
     setInContext(inContext) {
       this.inContext = inContext;
@@ -1478,7 +1783,7 @@ svg.icon {
       return this.inContext;
     }
     getContent() {
-      return this.contentEl?.innerHTML || "";
+      return this.content;
     }
     getMessageId() {
       return this.messageId;
@@ -1487,48 +1792,87 @@ svg.icon {
 
   // src/services/chat-service.ts
   var ChatService = class {
-    constructor(chatPanel, llmClient, contextManager) {
+    constructor(chatPanel, llmClient, contextManager, onApiKeyNotConfigured) {
       this.chatPanel = chatPanel;
       this.llmClient = llmClient;
       this.contextManager = contextManager;
+      this.onApiKeyNotConfigured = onApiKeyNotConfigured;
     }
     abortController = null;
     isProcessingValue = false;
     currentChatMessages = [];
+    pendingMessage = null;
+    historyManager = null;
+    setHistoryManager(historyManager) {
+      this.historyManager = historyManager;
+    }
     async sendMessage(content) {
       if (!content.trim()) return;
       this.isProcessingValue = true;
+      let assistantWidget = null;
       try {
         const userMessageId = this.generateId();
         const userMessage = { id: userMessageId, role: "user", content };
         const userWidget = new MessageWidget(content, userMessageId);
-        this.chatPanel.addMessageWidget(userWidget.getElement(), "user");
+        this.chatPanel.addWidget(userWidget, "user");
         this.addToCurrentChat(userMessage);
         this.contextManager.updateTfidfIndex(this.currentChatMessages);
+        if (this.historyManager) {
+          this.historyManager.saveMessageToChat(userMessage);
+        }
         this.abortController = new AbortController();
         const contextMessages = this.contextManager.getContextMessages(content, this.currentChatMessages);
         const assistantMessageId = this.generateId();
-        const assistantWidget = new MessageWidget("", assistantMessageId);
-        this.chatPanel.addMessageWidget(assistantWidget.getElement(), "assistant");
+        assistantWidget = new MessageWidget("", assistantMessageId);
+        this.chatPanel.addWidget(assistantWidget, "assistant");
         const response = await this.llmClient.call(contextMessages, this.abortController.signal);
         if (response === "API_KEY_NOT_CONFIGURED") {
-          const messageText = appConfig.get("Please configure your LLM settings first.", "ui.[lang].texts.messages.apiKeyNotConfigured");
-          assistantWidget.updateContent(messageText);
+          this.pendingMessage = content;
+          assistantWidget.update({
+            content: appConfig.get("LLM is not configured. Please set up your API settings.", "ui.[lang].texts.messages.apiNotConfiguredMessage")
+          });
+          setTimeout(() => {
+            if (this.onApiKeyNotConfigured) {
+              this.onApiKeyNotConfigured();
+            }
+          }, 1e3);
           return;
         }
-        assistantWidget.updateContent(response);
+        assistantWidget.update({ content: response });
         const assistantMessage = {
           id: assistantMessageId,
           role: "assistant",
           content: response
         };
         this.addToCurrentChat(assistantMessage);
+        if (this.historyManager) {
+          this.historyManager.saveMessageToChat(assistantMessage);
+        }
         this.contextManager.updateTfidfIndex(this.currentChatMessages);
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          this.chatPanel.addMessage("Request cancelled.", "assistant");
+        if (assistantWidget) {
+          let errorMessage = "";
+          if (error instanceof Error && error.name === "AbortError") {
+            errorMessage = appConfig.get("Request cancelled.", "ui.[lang].texts.messages.requestCancelled");
+          } else {
+            errorMessage = appConfig.get("Error: ", "ui.[lang].texts.messages.errorPrefix") + (error instanceof Error ? error.message : "Unknown error");
+          }
+          assistantWidget.update({ content: errorMessage });
+          const assistantMessage = {
+            id: assistantWidget.getId(),
+            role: "assistant",
+            content: errorMessage
+          };
+          this.addToCurrentChat(assistantMessage);
+          if (this.historyManager) {
+            this.historyManager.saveMessageToChat(assistantMessage);
+          }
         } else {
-          this.chatPanel.addMessage(`Error: ${error instanceof Error ? error.message : "Unknown error"}`, "assistant");
+          if (error instanceof Error && error.name === "AbortError") {
+            this.chatPanel.addMessage(appConfig.get("Request cancelled.", "ui.[lang].texts.messages.requestCancelled"), "assistant");
+          } else {
+            this.chatPanel.addMessage(appConfig.get("Error: ", "ui.[lang].texts.messages.errorPrefix") + (error instanceof Error ? error.message : "Unknown error"), "assistant");
+          }
         }
       } finally {
         this.isProcessingValue = false;
@@ -1552,6 +1896,18 @@ svg.icon {
     }
     generateId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+    // Method to send pending message after configuration
+    async sendPendingMessage() {
+      if (this.pendingMessage) {
+        const messageToSend = this.pendingMessage;
+        this.pendingMessage = null;
+        await this.sendMessage(messageToSend);
+      }
+    }
+    // Method to check if there's a pending message
+    hasPendingMessage() {
+      return this.pendingMessage !== null;
     }
   };
 
@@ -1822,6 +2178,41 @@ svg.icon {
     }
   };
 
+  // src/components/widgets/greeting-widget.ts
+  var GreetingWidget = class {
+    element;
+    widgetId;
+    constructor() {
+      this.widgetId = `greeting-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const templateEl = document.getElementById("greeting-widget-template");
+      if (!(templateEl instanceof HTMLTemplateElement)) {
+        throw new Error("Greeting widget template not found");
+      }
+      const frag = document.importNode(templateEl.content, true);
+      this.element = frag.firstElementChild;
+      if (!this.element) throw new Error("Greeting widget root element missing");
+    }
+    init(container) {
+      container.appendChild(this.element);
+    }
+    update(data) {
+    }
+    destroy() {
+      if (this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
+      }
+    }
+    getElement() {
+      return this.element;
+    }
+    getId() {
+      return this.widgetId;
+    }
+    getType() {
+      return "greeting";
+    }
+  };
+
   // src/services/chat-history-manager.ts
   var ChatHistoryManager = class {
     constructor(chatPanel, chatService, contextManager) {
@@ -1832,6 +2223,7 @@ svg.icon {
     currentChatId = null;
     onChatSelectHandler = null;
     onNewChatHandler = null;
+    onChatHistoryChange = null;
     addChat(title) {
       const id = this.generateId();
       const newChat = {
@@ -1895,15 +2287,12 @@ svg.icon {
           messages.forEach((msg) => {
             const displayRole = msg.role === "assist" ? "assistant" : msg.role;
             const widget = new MessageWidget(msg.content, msg.id);
-            this.chatPanel.addMessageWidget(widget.getElement(), displayRole);
+            this.chatPanel.addWidget(widget, displayRole);
             if (msg.role === "assist") {
               msg.role = "assistant";
             }
             this.chatService.addToCurrentChat(msg);
           });
-          if (this.onChatSelectHandler) {
-            this.onChatSelectHandler(chatId);
-          }
         } else {
           if (this.onNewChatHandler) {
             this.onNewChatHandler();
@@ -1919,22 +2308,19 @@ svg.icon {
     startNewChat() {
       this.contextManager.clearContextHighlights();
       this.chatPanel.clear();
-      const welcomeId = this.generateId();
-      const welcomeMessage = {
-        id: welcomeId,
-        role: "assistant",
-        content: appConfig.get("Hello! How can I help you today?", "ui.[lang].texts.app.greeting")
-      };
-      const welcomeWidget = new MessageWidget(welcomeMessage.content, welcomeId);
-      welcomeWidget.setInContext(true);
-      this.chatPanel.addMessageWidget(welcomeWidget.getElement(), "assistant");
-      this.chatService.addToCurrentChat(welcomeMessage);
-      const newChatTitle = appConfig.get("New Chat", "ui.[lang].texts.app.newChatTitle");
-      const newChatId = this.addChat(newChatTitle);
-      this.currentChatId = newChatId;
+      this.currentChatId = null;
+      const greetingWidget = new GreetingWidget();
+      this.chatPanel.addWidget(greetingWidget, "assistant");
     }
     saveMessageToChat(message) {
-      if (!this.currentChatId) return;
+      if (!this.currentChatId) {
+        let title = appConfig.get("New Chat", "ui.[lang].texts.app.newChatTitle");
+        if (message.role === "user") {
+          title = message.content.substring(0, 30) + (message.content.length > 30 ? "..." : "");
+        }
+        const newChatId = this.addChat(title);
+        this.currentChatId = newChatId;
+      }
       try {
         let messages = [];
         const stored = localStorage.getItem(`gptOverApiChat_${this.currentChatId}`);
@@ -1943,10 +2329,6 @@ svg.icon {
         }
         messages.push(message);
         localStorage.setItem(`gptOverApiChat_${this.currentChatId}`, JSON.stringify(messages));
-        if (messages.length === 2 && message.role === "user") {
-          const title = message.content.substring(0, 30) + (message.content.length > 30 ? "..." : "");
-          this.updateChatTitle(this.currentChatId, title);
-        }
       } catch (e) {
         console.error("Error saving message to chat:", e);
       }
@@ -1971,6 +2353,9 @@ svg.icon {
           if (chat) {
             chat.title = title;
             localStorage.setItem("gptOverApiChatHistory", JSON.stringify(history));
+            if (this.onChatHistoryChange) {
+              this.onChatHistoryChange();
+            }
           }
         }
       } catch (e) {
@@ -1984,28 +2369,29 @@ svg.icon {
 
   // src/services/widget-manager.ts
   var WidgetManager = class {
+    constructor(chatPanel) {
+      this.chatPanel = chatPanel;
+    }
     activeWidgets = /* @__PURE__ */ new Map();
     showWidget(widget) {
-      if (widget.getType) {
-        const widgetType = widget.getType();
-        if (widgetType) {
-          const existingWidget = this.activeWidgets.get(widgetType);
-          if (existingWidget) {
-            existingWidget.freeze();
-          }
-          const newWidget = widget.show();
-          this.activeWidgets.set(widgetType, newWidget);
-        } else {
-          widget.show();
+      const widgetType = widget.getType();
+      if (widgetType) {
+        const existingWidget = this.activeWidgets.get(widgetType);
+        if (existingWidget) {
+          existingWidget.destroy();
         }
-      } else {
-        widget.show();
+        const container = document.getElementById("chat-container");
+        if (container) {
+          widget.init(container);
+          this.chatPanel.addWidget(widget, "assistant");
+        }
+        this.activeWidgets.set(widgetType, widget);
       }
     }
     hideWidget(widgetType) {
       const existingWidget = this.activeWidgets.get(widgetType);
       if (existingWidget) {
-        existingWidget.freeze();
+        existingWidget.destroy();
         this.activeWidgets.delete(widgetType);
       }
     }
@@ -2029,9 +2415,15 @@ svg.icon {
       this.llmClient = new LLMClient();
       this.contextManager = new MessageContextManager(appConfig);
       this.contextManager.setChatPanel(this.chatPanel);
-      this.chatService = new ChatService(this.chatPanel, this.llmClient, this.contextManager);
+      this.chatService = new ChatService(this.chatPanel, this.llmClient, this.contextManager, () => {
+        const configView = new ConfigView(this.chatPanel);
+        this.widgetManager.showWidget(configView);
+      });
       this.historyManager = new ChatHistoryManager(this.chatPanel, this.chatService, this.contextManager);
-      this.widgetManager = new WidgetManager();
+      this.chatService.setHistoryManager(this.historyManager);
+      this.historyManager.setOnChatSelect((chatId) => this.historyManager.loadChat(chatId));
+      this.historyManager.setOnNewChat(() => this.startNewChat());
+      this.widgetManager = new WidgetManager(this.chatPanel);
       this.configView = new ConfigView(this.chatPanel);
       this.setupEventHandlers();
       this.historyManager.loadInitialChat();
@@ -2066,12 +2458,16 @@ svg.icon {
       });
       if (settingsBtn) {
         settingsBtn.addEventListener("click", () => {
-          this.widgetManager.showWidget(this.configView);
+          const configView = new ConfigView(this.chatPanel);
+          this.widgetManager.showWidget(configView);
         });
       }
-      window.addEventListener("llmConfigChanged", () => {
+      window.addEventListener("llmConfigChanged", async () => {
         this.llmClient = new LLMClient();
         appConfig.updateTitleWithModel();
+        if (this.chatService.hasPendingMessage()) {
+          await this.chatService.sendPendingMessage();
+        }
       });
       if (chatHistoryBtn) {
         chatHistoryBtn.addEventListener("click", () => {
@@ -2108,7 +2504,7 @@ svg.icon {
       const message = inputField.value.trim();
       if (!message) return;
       inputField.disabled = true;
-      sendBtn.textContent = "Cancel";
+      sendBtn.innerHTML = '<svg class="icon"><use href="#icon-close"></use></svg>';
       inputField.value = "";
       try {
         await this.chatService.sendMessage(message);
@@ -2120,7 +2516,7 @@ svg.icon {
         }
       } finally {
         inputField.disabled = false;
-        sendBtn.textContent = "Send";
+        sendBtn.innerHTML = '<svg class="icon"><use href="#icon-send"></use></svg>';
       }
     }
     startNewChat() {

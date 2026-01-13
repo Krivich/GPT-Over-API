@@ -6,13 +6,18 @@ import { Terminable } from './types.js';
 /**
  * Manages the chat display area in the UI, rendering messages with appropriate styling
  * and automatically scrolling to show new content. Supports both text messages
- * and complex message widgets with interactive elements.
+ * and complex message widgets with interactive elements. Acts as a smart renderer
+ * that manages which widgets are currently visible in the viewport.
  */
 export interface IChatPanel {
   clear(): void;
   addMessage(text: string, role: 'user' | 'assistant'): void;
   addMessageWidget(widget: HTMLElement, role: 'user' | 'assistant'): void;
+  addWidget(widget: IWidget, role: 'user' | 'assistant'): void;
+  removeWidget(widgetId: string): void;
+  updateWidget(widgetId: string, data?: any): void;
   getElement(): HTMLElement;
+  setVisibleRange(startIndex: number, endIndex: number): void;
 }
 
 /**
@@ -40,11 +45,16 @@ export interface IAppConfig {
 }
 
 /**
- * Represents a self-contained UI component that can be dynamically shown/hidden
- * with lifecycle management through the Terminable interface.
+ * Represents a self-contained UI component with full lifecycle management
+ * including initialization, updates, and destruction. Widgets manage their
+ * own state and DOM elements while participating in the broader application lifecycle.
  */
 export interface IWidget {
-  show(): Terminable;
+  init(container: HTMLElement): void;
+  update(data?: any): void;
+  destroy(): void;
+  getElement(): HTMLElement;
+  getId(): string;
   getType(): string;
 }
 
@@ -85,6 +95,9 @@ export interface IChatService {
   isProcessing(): boolean;
   getCurrentChatMessages(): Message[];
   addToCurrentChat(message: Message): void;
+  setHistoryManager(historyManager: IChatHistoryManager): void;
+  hasPendingMessage(): boolean;
+  sendPendingMessage(): Promise<void>;
 }
 
 /**

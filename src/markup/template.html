@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-<!-- SVG Sprite -->
+<!-- SVG Sprite from ikonate-->
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
     <symbol id="icon-send" viewBox="0 0 24 24">
         <title>Send</title>
@@ -45,6 +45,9 @@
     <symbol id="icon-feather" viewBox="0 0 24 24">
         <title>Feather</title>
         <path d="M5.12634 17C5.04271 17.6571 5 18.325 5 19V21M5.12634 17C6.03384 9.86861 11.7594 4 20 4L19 8H16L17 10L15 12H11L13 14L12 16H8L5.12634 17Z"/>
+    </symbol>
+    <symbol  id="icon-close" viewBox="0 0 24 24">
+        <title id="closeIconTitle">Close</title> <path d="M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575"/>
     </symbol>
 </svg>
 <!-- Main chat area -->
@@ -79,8 +82,11 @@
 <template id="chat-history-widget-template">
     <div class="ha-widget">
         <div class="ha-widget-header">
-            <svg class="icon"><use href="#icon-history"></use></svg>
-            <span data-text-key="ui.[lang].texts.app.chatHistoryTitle">Chat History</span>
+            <div class="ha-widget-header-content">
+                <svg class="icon"><use href="#icon-history"></use></svg>
+                <span data-text-key="ui.[lang].texts.app.chatHistoryTitle">Chat History</span>
+            </div>
+            <button class="close-btn" aria-label="Close">&times;</button>
         </div>
         <div class="ha-input-group">
             <input class="ha-input" type="text" id="chat-search-input" placeholder=" " data-config-key="ui.[lang].texts.sidebar.searchPlaceholder" />
@@ -99,8 +105,11 @@
 <template id="config-widget-template">
     <div class="ha-widget">
         <div class="ha-widget-header">
-            <svg class="icon"><use href="#icon-settings"></use></svg>
-            <span data-text-key="ui.[lang].texts.settings.title">LLM Settings</span>
+            <div class="ha-widget-header-content">
+                <svg class="icon"><use href="#icon-settings"></use></svg>
+                <span data-text-key="ui.[lang].texts.settings.title">LLM Settings</span>
+            </div>
+            <button class="close-btn" aria-label="Close">&times;</button>
         </div>
         <div class="ha-input-group">
             <input class="ha-input" type="text" name="apiEndpoint" placeholder=" " data-config-key="ui.[lang].texts.settings.defaultApiEndpoint" />
@@ -130,7 +139,7 @@
                 <svg class="icon icon-spin" style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;">
                     <use href="#icon-settings"></use>
                 </svg>
-                <span>Thinking...</span>
+                <span data-text-key="ui.[lang].thinkingPlaceholder">Thinking...</span>
             </div>
         </div>
         <span class="context-indicator">
@@ -138,6 +147,27 @@
             <span class="context-hint context-hint-remove" data-text-key="ui.[lang].texts.context.tapToRemove">(tap to remove)</span>
             <span class="context-hint context-hint-add" data-text-key="ui.[lang].texts.context.tapToInclude">(tap to include)</span>
         </span>
+    </div>
+</template>
+<!-- Template for greeting widget -->
+<template id="greeting-widget-template">
+    <div class="greeting-widget msg assistant">
+        <div class="greeting-content">
+            <h3 data-text-key="ui.[lang].texts.greeting.title">Welcome to LocalAIWaves!</h3>
+            <p data-text-key="ui.[lang].texts.greeting.description">This is a local chat client that connects to any LLM with an OpenAI-compatible API.</p>
+            <ul class="greeting-steps">
+                <li>
+                    <strong data-text-key="ui.[lang].texts.greeting.step1">1. Configure</strong> - <span data-text-key="ui.[lang].texts.greeting.step1Desc">Click the settings icon to enter your API endpoint and key</span>
+                </li>
+                <li>
+                    <strong data-text-key="ui.[lang].texts.greeting.step2">2. Chat</strong> - <span data-text-key="ui.[lang].texts.greeting.step2Desc">Start typing your message in the input box below</span>
+                </li>
+                <li>
+                    <strong data-text-key="ui.[lang].texts.greeting.step3">3. Manage</strong> - <span data-text-key="ui.[lang].texts.greeting.step3Desc">Use the history button to switch between chats</span>
+                </li>
+            </ul>
+            <p class="greeting-note" data-text-key="ui.[lang].texts.greeting.privacyNote">All your data stays on your device - no information is sent to any server.</p>
+        </div>
     </div>
 </template>
 <script src="dist/bundle.js"></script>

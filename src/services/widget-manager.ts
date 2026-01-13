@@ -1,33 +1,37 @@
-import { IWidget, IWidgetManager } from '../interfaces.js';
-import { Terminable } from '../types.js';
+import { IWidget, IWidgetManager, IChatPanel } from '../interfaces.js';
 
 export class WidgetManager implements IWidgetManager {
-    private activeWidgets: Map<string, Terminable> = new Map();
+    private activeWidgets: Map<string, IWidget> = new Map();
 
     showWidget(widget: IWidget): void {
-        if (widget.getType) {
-            const widgetType = widget.getType();
-            if (widgetType) {
-                const existingWidget = this.activeWidgets.get(widgetType);
-                if (existingWidget) {
-                    existingWidget.freeze();
-                }
+        const widgetType = widget.getType();
 
-                const newWidget = widget.show();
-                this.activeWidgets.set(widgetType, newWidget);
-            } else {
-                widget.show();
+        if (widgetType) {
+            const existingWidget = this.activeWidgets.get(widgetType);
+            if (existingWidget) {
+                // Destroy the existing widget
+                existingWidget.destroy();
             }
-        } else {
-            widget.show();
+
+            // Initialize the new widget
+            const container = document.getElementById('chat-container');
+            if (container) {
+                widget.init(container);
+                this.chatPanel.addWidget(widget, 'assistant');
+            }
+
+            this.activeWidgets.set(widgetType, widget);
         }
     }
 
     hideWidget(widgetType: string): void {
         const existingWidget = this.activeWidgets.get(widgetType);
         if (existingWidget) {
-            existingWidget.freeze();
+            // Destroy the widget
+            existingWidget.destroy();
             this.activeWidgets.delete(widgetType);
         }
     }
+
+    constructor(private chatPanel: IChatPanel) {}
 }

@@ -37,9 +37,15 @@ class GPTOverAPIApp {
         this.llmClient = new LLMClient();
         this.contextManager = new MessageContextManager(appConfig);
         this.contextManager.setChatPanel(this.chatPanel); // Connect chat panel to context manager
-        this.chatService = new ChatService(this.chatPanel, this.llmClient, this.contextManager);
+        this.chatService = new ChatService(this.chatPanel, this.llmClient, this.contextManager, () => {
+            const configView = new ConfigView(this.chatPanel);
+            this.widgetManager.showWidget(configView);
+        });
         this.historyManager = new ChatHistoryManager(this.chatPanel, this.chatService, this.contextManager);
-        this.widgetManager = new WidgetManager();
+        this.chatService.setHistoryManager(this.historyManager);
+        this.historyManager.setOnChatSelect((chatId) => this.historyManager.loadChat(chatId));
+        this.historyManager.setOnNewChat(() => this.startNewChat());
+        this.widgetManager = new WidgetManager(this.chatPanel);
         this.configView = new ConfigView(this.chatPanel);
 
         this.setupEventHandlers();
@@ -81,18 +87,25 @@ class GPTOverAPIApp {
 
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
-                this.widgetManager.showWidget(this.configView);
+                // Create a new instance of ConfigView each time it's shown
+                const configView = new ConfigView(this.chatPanel);
+                this.widgetManager.showWidget(configView);
             });
         }
 
-        window.addEventListener('llmConfigChanged', () => {
+        window.addEventListener('llmConfigChanged', async () => {
             this.llmClient = new LLMClient();
             appConfig.updateTitleWithModel();
+
+            // If there's a pending message, send it now that config is updated
+            if (this.chatService.hasPendingMessage()) {
+                await this.chatService.sendPendingMessage();
+            }
         });
 
         if (chatHistoryBtn) {
             chatHistoryBtn.addEventListener('click', () => {
-                const chatHistoryWidget: IWidget = new ChatHistoryWidget(
+                const chatHistoryWidget = new ChatHistoryWidget(
                     this.chatPanel,
                     (chatId) => this.historyManager.loadChat(chatId),
                     () => this.startNewChat()
@@ -132,7 +145,8 @@ class GPTOverAPIApp {
         if (!message) return;
 
         inputField.disabled = true;
-        sendBtn.textContent = 'Cancel';
+        // Replace the icon with a close icon when cancelling
+        sendBtn.innerHTML = '<svg class="icon"><use href="#icon-close"></use></svg>';
         inputField.value = '';
 
         try {
@@ -146,7 +160,8 @@ class GPTOverAPIApp {
             }
         } finally {
             inputField.disabled = false;
-            sendBtn.textContent = 'Send';
+            // Restore the send icon when done
+            sendBtn.innerHTML = '<svg class="icon"><use href="#icon-send"></use></svg>';
         }
     }
 

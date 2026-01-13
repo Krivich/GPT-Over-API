@@ -1,37 +1,40 @@
 // src/components/widgets/config-view.ts
-import { IChatPanel } from '../../interfaces.js';
-import { Terminable } from '../../types.js';
+import { IWidget, IChatPanel } from '../../interfaces.js';
 import { appConfig } from '../../config/app-config.js';
 
-export class ConfigView {
+export class ConfigView implements IWidget {
+    private element: HTMLElement | null = null;
+    private widgetId: string;
+
     constructor(
         private chatPanel: IChatPanel
-    ) {}
-
-    getType(): string {
-        return 'config';
+    ) {
+        this.widgetId = `config-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     }
 
-    show(): Terminable {
+    init(container: HTMLElement): void {
         const templateEl = document.getElementById('config-widget-template');
         if (!(templateEl instanceof HTMLTemplateElement)) {
             throw new Error('Config widget template not found');
         }
 
         const frag = document.importNode(templateEl.content, true);
-        const widget = frag.firstElementChild as HTMLElement;
-        if (!widget) throw new Error('Config widget root element missing');
+        this.element = frag.firstElementChild as HTMLElement;
+        if (!this.element) throw new Error('Config widget root element missing');
 
-        const endpointInput = widget.querySelector('[name="apiEndpoint"]') as HTMLInputElement;
-        const keyInput = widget.querySelector('[name="apiKey"]') as HTMLInputElement;
-        const modelInput = widget.querySelector('[name="model"]') as HTMLInputElement;
-        const saveBtn = widget.querySelector('.config-save-btn') as HTMLElement;
+        const endpointInput = this.element.querySelector('[name="apiEndpoint"]') as HTMLInputElement;
+        const keyInput = this.element.querySelector('[name="apiKey"]') as HTMLInputElement;
+        const modelInput = this.element.querySelector('[name="model"]') as HTMLInputElement;
+        const saveBtn = this.element.querySelector('.config-save-btn') as HTMLElement;
+
+        // Find and setup close button
+        const closeBtn = this.element.querySelector('.close-btn') as HTMLElement;
 
         if (!endpointInput || !keyInput || !modelInput || !saveBtn) {
             throw new Error('Config widget form elements missing');
         }
 
-        // Загрузка конфига
+        // Load config
         const configRaw = localStorage.getItem('gptOverApiConfig');
         let config = configRaw ? JSON.parse(configRaw) : {};
         if (config.apiKey !== undefined || config.apiEndpoint !== undefined || config.model !== undefined) {
@@ -43,16 +46,7 @@ export class ConfigView {
         keyInput.value = llm.apiKey || '';
         modelInput.value = llm.model || appConfig.get('tngtech/deepseek-r1t2-chimera:free', 'llm.defaultModel');
 
-        // Freeze-функция для внешнего управления
-        const freeze = () => {
-            widget.querySelectorAll('.ha-input').forEach(el => {
-                (el as HTMLInputElement).disabled = true;
-            });
-            saveBtn.remove();
-            widget.classList.add('frozen');
-        };
-
-        // Обработчик сохранения
+        // Handler for saving
         saveBtn.addEventListener('click', () => {
             const newConfig = {
                 llm: {
@@ -68,12 +62,55 @@ export class ConfigView {
 
             // Trigger a custom event to notify that config has changed
             window.dispatchEvent(new CustomEvent('llmConfigChanged', { detail: newConfig }));
-
-            freeze(); // после сохранения — фризим
         });
 
-        this.chatPanel.addMessageWidget(widget, 'assistant');
+        // Setup close button
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.destroy(); // Close the widget when close button is clicked
+            });
+        }
+    }
 
-        return { freeze };
+    update(data?: any): void {
+        if (!this.element) return;
+
+        if (data && typeof data === 'object') {
+            const endpointInput = this.element.querySelector('[name="apiEndpoint"]') as HTMLInputElement;
+            const keyInput = this.element.querySelector('[name="apiKey"]') as HTMLInputElement;
+            const modelInput = this.element.querySelector('[name="model"]') as HTMLInputElement;
+
+            if (endpointInput && 'apiEndpoint' in data) {
+                endpointInput.value = data.apiEndpoint;
+            }
+            if (keyInput && 'apiKey' in data) {
+                keyInput.value = data.apiKey;
+            }
+            if (modelInput && 'model' in data) {
+                modelInput.value = data.model;
+            }
+        }
+    }
+
+    destroy(): void {
+        if (this.element && this.element.parentNode) {
+            this.element.parentNode.removeChild(this.element);
+        }
+        this.element = null;
+    }
+
+    getElement(): HTMLElement {
+        if (!this.element) {
+            throw new Error('ConfigView not initialized');
+        }
+        return this.element;
+    }
+
+    getId(): string {
+        return this.widgetId;
+    }
+
+    getType(): string {
+        return 'config';
     }
 }

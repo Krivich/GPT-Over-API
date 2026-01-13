@@ -1,70 +1,116 @@
 // src/components/widgets/chat-history-widget.ts
-import { IChatPanel } from '../../interfaces.js';
-import { Terminable } from '../../types.js';
+import { IWidget, IChatPanel } from '../../interfaces.js';
 import { appConfig } from '../../config/app-config.js';
 
-export class ChatHistoryWidget {
+export class ChatHistoryWidget implements IWidget {
+    private element: HTMLElement | null = null;
+    private widgetId: string;
+    private historyList: Element | null = null;
+    private newChatBtn: HTMLElement | null = null;
+    private searchInput: HTMLInputElement | null = null;
+
     constructor(
         private chatPanel: IChatPanel,
         private onChatSelect: (chatId: string) => void,
         private onNewChat: () => void
-    ) {}
-
-    getType(): string {
-        return 'chat-history';
+    ) {
+        this.widgetId = `chat-history-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     }
 
-    show(): Terminable {
+    init(container: HTMLElement): void {
         const templateEl = document.getElementById('chat-history-widget-template');
         if (!(templateEl instanceof HTMLTemplateElement)) {
             throw new Error('Chat history widget template not found');
         }
 
         const frag = document.importNode(templateEl.content, true);
-        const widget = frag.firstElementChild as HTMLElement;
-        if (!widget) throw new Error('Chat history widget root element missing');
+        this.element = frag.firstElementChild as HTMLElement;
+        if (!this.element) throw new Error('Chat history widget root element missing');
 
-        const historyList = widget.querySelector('.chat-history-list');
-        const newChatBtn = widget.querySelector('#new-chat-btn');
-        const searchInput = widget.querySelector('#chat-search-input');
+        this.historyList = this.element.querySelector('.chat-history-list');
+        this.newChatBtn = this.element.querySelector('#new-chat-btn') as HTMLElement;
+        this.searchInput = this.element.querySelector('#chat-search-input') as HTMLInputElement;
 
-        if (!historyList || !newChatBtn) {
+        // Find and setup close button
+        const closeBtn = this.element.querySelector('.close-btn') as HTMLElement;
+
+        if (!this.historyList || !this.newChatBtn) {
             throw new Error('Chat history widget elements missing');
         }
 
         // Load and display chat history
-        this.renderChatHistory(historyList);
+        this.renderChatHistory();
 
         // Setup search functionality
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
-                this.renderChatHistory(historyList, searchTerm);
-            });
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', this.handleSearch.bind(this));
         }
 
         // Setup new chat button
-        newChatBtn.addEventListener('click', () => {
-            this.onNewChat();
-        });
+        this.newChatBtn.addEventListener('click', this.handleNewChatClick.bind(this));
 
-        // Freeze function for external management
-        const freeze = () => {
-            widget.querySelectorAll('button, input').forEach(el => {
-                if (el instanceof HTMLButtonElement || el instanceof HTMLInputElement) {
-                    el.disabled = true;
-                }
+        // Setup close button
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.destroy(); // Close the widget when close button is clicked
             });
-            widget.classList.add('frozen');
-        };
-
-        this.chatPanel.addMessageWidget(widget, 'assistant');
-
-        return { freeze };
+        }
     }
 
-    private renderChatHistory(container: Element, searchTerm: string = ''): void {
-        container.innerHTML = '';
+    update(data?: any): void {
+        if (data && typeof data === 'object') {
+            if ('refresh' in data && data.refresh === true) {
+                this.renderChatHistory();
+            }
+        }
+    }
+
+    destroy(): void {
+        // Remove event listeners to prevent memory leaks
+        if (this.searchInput) {
+            this.searchInput.removeEventListener('input', this.handleSearch.bind(this));
+        }
+        if (this.newChatBtn) {
+            this.newChatBtn.removeEventListener('click', this.handleNewChatClick.bind(this));
+        }
+
+        if (this.element && this.element.parentNode) {
+            this.element.parentNode.removeChild(this.element);
+        }
+        this.element = null;
+        this.historyList = null;
+        this.newChatBtn = null;
+        this.searchInput = null;
+    }
+
+    getElement(): HTMLElement {
+        if (!this.element) {
+            throw new Error('ChatHistoryWidget not initialized');
+        }
+        return this.element;
+    }
+
+    getId(): string {
+        return this.widgetId;
+    }
+
+    getType(): string {
+        return 'chat-history';
+    }
+
+    private handleSearch(e: Event): void {
+        const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+        this.renderChatHistory(searchTerm);
+    }
+
+    private handleNewChatClick(): void {
+        this.onNewChat();
+    }
+
+    private renderChatHistory(searchTerm: string = ''): void {
+        if (!this.historyList) return;
+
+        this.historyList.innerHTML = '';
 
         const storedHistory = localStorage.getItem('gptOverApiChatHistory');
         let chatHistory = [];
@@ -94,7 +140,7 @@ export class ChatHistoryWidget {
                 appConfig.get('No chats yet', 'ui.[lang].texts.sidebar.noChats');
             emptyMsg.style.fontStyle = 'italic';
             emptyMsg.style.color = 'var(--ha-color-text-secondary)';
-            container.appendChild(emptyMsg);
+            this.historyList.appendChild(emptyMsg);
             return;
         }
 
@@ -106,7 +152,7 @@ export class ChatHistoryWidget {
             chatItem.addEventListener('click', () => {
                 this.onChatSelect(chat.id);
             });
-            container.appendChild(chatItem);
+            this.historyList!.appendChild(chatItem);
         });
     }
 }

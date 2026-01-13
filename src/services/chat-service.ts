@@ -1,4 +1,4 @@
-import { IChatPanel, ILLMClient, IChatService, IMessageContextManager } from '../interfaces.js';
+import { IChatPanel, ILLMClient, IChatService, IMessageContextManager, IChatHistoryManager } from '../interfaces.js';
 import { Message } from '../types.js';
 import { appConfig } from '../config/app-config.js';
 import { MessageWidget } from '../components/widgets/message-widget.js';
@@ -7,17 +7,27 @@ export class ChatService implements IChatService {
     private abortController: AbortController | null = null;
     private isProcessingValue = false;
     private currentChatMessages: Message[] = [];
-    
+    private pendingMessage: string | null = null;
+
+    private historyManager: IChatHistoryManager | null = null;
+
     constructor(
         private readonly chatPanel: IChatPanel,
         private readonly llmClient: ILLMClient,
-        private readonly contextManager: IMessageContextManager
+        private readonly contextManager: IMessageContextManager,
+        private readonly onApiKeyNotConfigured?: () => void
     ) {}
+
+    public setHistoryManager(historyManager: IChatHistoryManager): void {
+        this.historyManager = historyManager;
+    }
 
     async sendMessage(content: string): Promise<void> {
         if (!content.trim()) return;
 
         this.isProcessingValue = true;
+
+        let assistantWidget: MessageWidget | null = null;
 
         try {
             const userMessageId = this.generateId();
@@ -25,13 +35,18 @@ export class ChatService implements IChatService {
 
             // Add user message to UI
             const userWidget = new MessageWidget(content, userMessageId);
-            this.chatPanel.addMessageWidget(userWidget.getElement(), 'user');
+            this.chatPanel.addWidget(userWidget, 'user');
 
             // Add to context
             this.addToCurrentChat(userMessage);
 
             // Update TF-IDF index
             this.contextManager.updateTfidfIndex(this.currentChatMessages);
+
+            // Save user message to chat history
+            if (this.historyManager) {
+                this.historyManager.saveMessageToChat(userMessage);
+            }
 
             this.abortController = new AbortController();
 
@@ -40,20 +55,33 @@ export class ChatService implements IChatService {
 
             // Create widget for assistant response
             const assistantMessageId = this.generateId();
-            const assistantWidget = new MessageWidget('', assistantMessageId); // Empty content to show loading
-            this.chatPanel.addMessageWidget(assistantWidget.getElement(), 'assistant');
+            assistantWidget = new MessageWidget('', assistantMessageId); // Empty content to show loading
+            this.chatPanel.addWidget(assistantWidget, 'assistant');
 
             // Get response
             const response = await this.llmClient.call(contextMessages, this.abortController.signal);
 
             if (response === 'API_KEY_NOT_CONFIGURED') {
-                const messageText = appConfig.get('Please configure your LLM settings first.', 'ui.[lang].texts.messages.apiKeyNotConfigured');
-                assistantWidget.updateContent(messageText);
+                // Store the pending message
+                this.pendingMessage = content;
+
+                // Show a message that LLM is not configured
+                assistantWidget.update({
+                    content: appConfig.get('LLM is not configured. Please set up your API settings.', 'ui.[lang].texts.messages.apiNotConfiguredMessage')
+                });
+
+                // Open the settings widget after a short delay
+                setTimeout(() => {
+                    if (this.onApiKeyNotConfigured) {
+                        this.onApiKeyNotConfigured();
+                    }
+                }, 1000); // Delay to allow the message to be seen
+
                 return;
             }
 
             // Update widget with response
-            assistantWidget.updateContent(response);
+            assistantWidget.update({ content: response });
 
             // Add assistant response to context
             const assistantMessage = {
@@ -64,14 +92,46 @@ export class ChatService implements IChatService {
 
             this.addToCurrentChat(assistantMessage);
 
+            // Save assistant message to chat history
+            if (this.historyManager) {
+                this.historyManager.saveMessageToChat(assistantMessage);
+            }
+
             // Update TF-IDF index with the new message
             this.contextManager.updateTfidfIndex(this.currentChatMessages);
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'AbortError') {
-                this.chatPanel.addMessage('Request cancelled.', 'assistant');
+            if (assistantWidget) {
+                let errorMessage = '';
+                if (error instanceof Error && error.name === 'AbortError') {
+                    errorMessage = appConfig.get('Request cancelled.', 'ui.[lang].texts.messages.requestCancelled');
+                } else {
+                    errorMessage = appConfig.get('Error: ', 'ui.[lang].texts.messages.errorPrefix') + (error instanceof Error ? error.message : 'Unknown error');
+                }
+
+                // Update the assistant widget with the error/cancellation message
+                assistantWidget.update({ content: errorMessage });
+
+                // Add the error/cancellation message to chat history as well
+                const assistantMessage = {
+                    id: assistantWidget.getId(),
+                    role: 'assistant' as const,
+                    content: errorMessage
+                };
+
+                this.addToCurrentChat(assistantMessage);
+
+                // Save error/cancellation message to chat history
+                if (this.historyManager) {
+                    this.historyManager.saveMessageToChat(assistantMessage);
+                }
             } else {
-                this.chatPanel.addMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
+                // If assistant widget wasn't created, add a message directly to the chat panel
+                if (error instanceof Error && error.name === 'AbortError') {
+                    this.chatPanel.addMessage(appConfig.get('Request cancelled.', 'ui.[lang].texts.messages.requestCancelled'), 'assistant');
+                } else {
+                    this.chatPanel.addMessage(appConfig.get('Error: ', 'ui.[lang].texts.messages.errorPrefix') + (error instanceof Error ? error.message : 'Unknown error'), 'assistant');
+                }
             }
         } finally {
             this.isProcessingValue = false;
@@ -101,5 +161,20 @@ export class ChatService implements IChatService {
 
     private generateId(): string {
         return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    // Method to send pending message after configuration
+    public async sendPendingMessage(): Promise<void> {
+        if (this.pendingMessage) {
+            const messageToSend = this.pendingMessage;
+            this.pendingMessage = null; // Clear the pending message
+            // Re-send the original message
+            await this.sendMessage(messageToSend);
+        }
+    }
+
+    // Method to check if there's a pending message
+    public hasPendingMessage(): boolean {
+        return this.pendingMessage !== null;
     }
 }
